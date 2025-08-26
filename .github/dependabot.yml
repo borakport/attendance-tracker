@@ -1,0 +1,67 @@
+version: 2
+updates:
+  # Backend - Auth Service
+  - package-ecosystem: "npm"
+    directory: "/backend/services/auth-service"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "backend"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
+  # Backend - Attendance Service
+  - package-ecosystem: "npm"
+    directory: "/backend/services/attendance-service"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    labels:
+      - "dependencies"
+      - "backend"
+
+  # Backend - Realtime Service
+  - package-ecosystem: "npm"
+    directory: "/backend/services/realtime-service"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    labels:
+      - "dependencies"
+      - "backend"
+
+  # Mobile App
+  - package-ecosystem: "npm"
+    directory: "/mobile/AttendanceApp"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    labels:
+      - "dependencies"
+      - "mobile"
+
+  # Docker
+  - package-ecosystem: "docker"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "docker"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "github-actions"

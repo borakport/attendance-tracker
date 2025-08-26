@@ -1,0 +1,25 @@
+# This file defines who is responsible for code in your repository
+# These owners will be the default owners for everything in the repo
+
+# Global Owners
+* @borakport
+
+# Documentation
+/docs/ @borakport
+*.md @borakport
+
+# Backend Services
+/backend/services/auth-service/ @borakport
+/backend/services/attendance-service/ @borakport
+/backend/services/realtime-service/ @borakport
+/backend/shared/ @borakport
+
+# Mobile App
+/mobile/ @borakport
+
+# GitHub Configuration
+/.github/ @borakport
+
+# Docker & Infrastructure
+/backend/docker-compose.yml @borakport
+Dockerfile @borakport

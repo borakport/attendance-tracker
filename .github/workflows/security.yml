@@ -1,0 +1,37 @@
+name: Security Audit
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run security audit every Monday at 9am UTC
+    - cron: '0 9 * * 1'
+
+jobs:
+  security-audit:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Use Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    
+    - name: Security Audit - Auth Service
+      run: |
+        cd backend/services/auth-service
+        npm audit --audit-level=moderate
+        
+    - name: Security Audit - Mobile App
+      run: |
+        cd mobile/AttendanceApp
+        npm audit --audit-level=moderate
+        
+    - name: Run GitLeaks
+      uses: gitleaks/gitleaks-action@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
