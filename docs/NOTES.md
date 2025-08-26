@@ -91,6 +91,43 @@ Attendance
     POST /api/v1/attendance/mark
     GET /api/v1/attendance/session/:sessionId
 
+## 🧪 API Testing Methods
+
+### Method 1: Using curl (Works after CORS fix)
+```bash
+# Test health endpoint
+curl http://localhost:3001/health
+
+# Test signin
+curl -X POST http://localhost:3001/api/v1/auth/signin \
+  -H "Content-Type: application/json" \
+  -d '{"email":"student1@attendance.com","password":"Student@123"}'
+```
+
+### Method 2: VS Code REST Client Extension
+1. Install the "REST Client" extension in VS Code
+2. Open `backend/services/auth-service/test-api.http`
+3. Click "Send Request" above any request
+
+### Method 3: PowerShell Script (Windows)
+```powershell
+cd backend/services/auth-service
+./test-api.ps1
+```
+
+### Method 4: Bash Script (Linux/Mac)
+```bash
+cd backend/services/auth-service
+chmod +x test-api.sh
+./test-api.sh
+```
+
+### Testing Notes
+- CORS is disabled in development mode for easier testing
+- Rate limiting is disabled in development
+- Use test accounts from above for authentication
+- JWT tokens expire in 15 minutes (access) and 7 days (refresh)
+
 📍 GPS Testing Data
 San Francisco Coordinates
 
