@@ -1,5 +1,6 @@
 # GPS Attendance Tracker
 
+![Project Status](https://img.shields.io/badge/Status-In%20Development-yellow) ![Progress](https://img.shields.io/badge/Progress-25%25-orange) ![GitHub last commit](https://img.shields.io/github/last-commit/borakport/attendance-tracker) ![GitHub issues](https://img.shields.io/github/issues/borakport/attendance-tracker)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
