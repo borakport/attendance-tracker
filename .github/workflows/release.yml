@@ -28,7 +28,7 @@ jobs:
         tar -czf backend-services.tar.gz backend/services/*/dist
         
     - name: Create GitHub Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         files: |
           backend-services.tar.gz
