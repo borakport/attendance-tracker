@@ -1,6 +1,6 @@
 # GPS Attendance Tracker
 
-![Project Status](https://img.shields.io/badge/Status-In%20Development-yellow) ![Progress](https://img.shields.io/badge/Progress-25%25-orange) ![GitHub last commit](https://img.shields.io/github/last-commit/borakport/attendance-tracker) ![GitHub issues](https://img.shields.io/github/issues/borakport/attendance-tracker)
+![Project Status](https://img.shields.io/badge/Status-Backend%20Complete-green) ![Progress](https://img.shields.io/badge/Progress-65%25-brightgreen) ![GitHub last commit](https://img.shields.io/github/last-commit/borakport/attendance-tracker) ![GitHub issues](https://img.shields.io/github/issues/borakport/attendance-tracker)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
@@ -52,3 +52,20 @@ cd ../../mobile/AttendanceApp
 npm install
 npm run android # or npm run ios
 ```
+
+## 📚 Documentation
+
+Comprehensive documentation is available in the `/docs` directory:
+
+- **[GitHub Features Guide](docs/GITHUB_FEATURES_GUIDE.md)** - How to use all GitHub automation & workflows
+- **[Git Workflow](docs/GIT_WORKFLOW.md)** - Branch strategy and collaboration guidelines  
+- **[API Documentation](docs/API_DOCUMENTATION.md)** - Complete API reference
+- **[Development Guide](docs/DEVELOPMENT.md)** - Local development setup
+- **[Architecture Overview](docs/ARCHITECTURE.md)** - System design and components
+- **[Security Policy](docs/SECURITY.md)** - Security guidelines and reporting
+- **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and solutions
+
+### Quick Links
+- 🚀 **[Project Status](docs/PROJECT_STATUS.md)** - Current progress and roadmap
+- 🧪 **[Test Data](docs/TEST_DATA.md)** - Login credentials and sample data
+- ⚡ **[Quick Reference](docs/QUICK_REFERENCE.md)** - Common commands and shortcuts
