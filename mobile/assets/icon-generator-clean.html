@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPS Attendance Icon Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px;
+            color: white;
+        }
+        
+        h1 {
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+        
+        .subtitle {
+            margin-bottom: 40px;
+            opacity: 0.9;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 900px;
+            width: 100%;
+        }
+        
+        .canvas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .canvas-item {
+            text-align: center;
+        }
+        
+        .canvas-wrapper {
+            background: #f0f0f0;
+            background-image: 
+                linear-gradient(45deg, #ddd 25%, transparent 25%),
+                linear-gradient(-45deg, #ddd 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #ddd 75%),
+                linear-gradient(-45deg, transparent 75%, #ddd 75%);
+            background-size: 16px 16px;
+            background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 10px;
+            display: inline-block;
+            border: 1px solid #ccc;
+        }
+        
+        canvas {
+            display: block;
+            border-radius: 8px;
+        }
+        
+        .label {
+            color: #333;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        
+        .download-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .controls {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+        }
+        
+        .control-label {
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 5px;
+            display: block;
+        }
+        
+        .color-inputs {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        input[type="color"] {
+            width: 50px;
+            height: 40px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        input[type="text"] {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎯 GPS Attendance Icon Generator</h1>
+    <p class="subtitle">Option 1: Clean Minimal Design (Recommended)</p>
+    <p class="subtitle" style="font-size: 14px; opacity: 0.8;">✨ GPS pin with radar rings on transparent background</p>
+    
+    <div class="container">
+        <div class="controls">
+            <div class="control-group">
+                <label class="control-label">Pin Color:</label>
+                <div class="color-inputs">
+                    <input type="color" id="primaryColor" value="#FF4444">
+                    <input type="text" id="primaryHex" value="#FF4444" placeholder="#FF4444">
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label class="control-label">Radar Ring Color:</label>
+                <div class="color-inputs">
+                    <input type="color" id="secondaryColor" value="#667eea">
+                    <input type="text" id="secondaryHex" value="#667eea" placeholder="#667eea">
+                </div>
+            </div>
+        </div>
+        
+        <div class="canvas-grid">
+            <div class="canvas-item">
+                <div class="canvas-wrapper">
+                    <canvas id="icon512" width="512" height="512"></canvas>
+                </div>
+                <div class="label">Icon (512x512)</div>
+                <button class="download-btn" onclick="downloadIcon('icon512', 'icon.png')">
+                    Download icon.png
+                </button>
+            </div>
+            
+            <div class="canvas-item">
+                <div class="canvas-wrapper">
+                    <canvas id="adaptiveIcon512" width="512" height="512"></canvas>
+                </div>
+                <div class="label">Adaptive Icon (512x512)</div>
+                <button class="download-btn" onclick="downloadIcon('adaptiveIcon512', 'adaptive-icon.png')">
+                    Download adaptive-icon.png
+                </button>
+            </div>
+            
+            <div class="canvas-item">
+                <div class="canvas-wrapper">
+                    <canvas id="splash512" width="512" height="512"></canvas>
+                </div>
+                <div class="label">Splash (512x512)</div>
+                <button class="download-btn" onclick="downloadIcon('splash512', 'splash.png')">
+                    Download splash.png
+                </button>
+            </div>
+            
+            <div class="canvas-item">
+                <div class="canvas-wrapper">
+                    <canvas id="notification96" width="96" height="96"></canvas>
+                </div>
+                <div class="label">Notification (96x96)</div>
+                <button class="download-btn" onclick="downloadIcon('notification96', 'notification-icon.png')">
+                    Download notification-icon.png
+                </button>
+            </div>
+            
+            <div class="canvas-item">
+                <div class="canvas-wrapper">
+                    <canvas id="favicon32" width="32" height="32"></canvas>
+                </div>
+                <div class="label">Favicon (32x32)</div>
+                <button class="download-btn" onclick="downloadIcon('favicon32', 'favicon.png')">
+                    Download favicon.png
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function drawIcon(canvasId, size) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            const pinColor = document.getElementById('primaryColor').value;
+            const radarColor = document.getElementById('secondaryColor').value;
+            
+            // Set canvas size and clear with full transparency
+            canvas.width = size;
+            canvas.height = size;
+            
+            // Clear entire canvas to transparent
+            ctx.clearRect(0, 0, size, size);
+            
+            // Enable anti-aliasing for smooth edges
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            
+            const centerX = size / 2;
+            const centerY = size / 2;
+            
+            // Draw Option 1: Clean Minimal Design with Radar Rings
+            // Draw radar rings (concentric circles)
+            const maxRadius = size * 0.45;
+            const ringSpacing = maxRadius / 4;
+            
+            for (let i = 1; i <= 4; i++) {
+                const ringRadius = ringSpacing * i;
+                const opacity = 1 - (i * 0.2); // Fade out as rings get larger
+                
+                // Convert hex color to rgba
+                const r = parseInt(radarColor.substr(1, 2), 16);
+                const g = parseInt(radarColor.substr(3, 2), 16);
+                const b = parseInt(radarColor.substr(5, 2), 16);
+                
+                ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${opacity * 0.6})`;
+                ctx.lineWidth = size * 0.004;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, ringRadius, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            
+            // Draw main GPS pin
+            const pinSize = size * 0.08;
+            const pinX = centerX;
+            const pinY = centerY;
+            
+            // Draw pin shadow/glow effect
+            const r = parseInt(radarColor.substr(1, 2), 16);
+            const g = parseInt(radarColor.substr(3, 2), 16);
+            const b = parseInt(radarColor.substr(5, 2), 16);
+            ctx.shadowColor = `rgba(${r}, ${g}, ${b}, 0.3)`;
+            ctx.shadowBlur = size * 0.02;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = size * 0.01;
+            
+            // Draw pin body (teardrop shape)
+            ctx.fillStyle = pinColor;
+            ctx.beginPath();
+            ctx.arc(pinX, pinY - pinSize * 0.3, pinSize * 0.6, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw pin point
+            ctx.beginPath();
+            ctx.moveTo(pinX - pinSize * 0.3, pinY + pinSize * 0.3);
+            ctx.lineTo(pinX + pinSize * 0.3, pinY + pinSize * 0.3);
+            ctx.lineTo(pinX, pinY + pinSize * 1.2);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Reset shadow
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+            
+            // Draw pin inner white dot
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(pinX, pinY - pinSize * 0.3, pinSize * 0.25, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw center pulse circle (small animated-looking circle)
+            ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.8)`;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY + size * 0.15, size * 0.02, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        function generateAllIcons() {
+            drawIcon('icon512', 512);
+            drawIcon('adaptiveIcon512', 512);
+            drawIcon('splash512', 512);
+            drawIcon('notification96', 96);
+            drawIcon('favicon32', 32);
+        }
+        
+        function downloadIcon(canvasId, filename) {
+            const canvas = document.getElementById(canvasId);
+            const link = document.createElement('a');
+            link.download = filename;
+            // Ensure PNG format with transparency support
+            link.href = canvas.toDataURL('image/png', 1.0);
+            link.click();
+        }
+        
+        // Color input synchronization
+        document.getElementById('primaryColor').addEventListener('input', (e) => {
+            document.getElementById('primaryHex').value = e.target.value;
+            generateAllIcons();
+        });
+        
+        document.getElementById('primaryHex').addEventListener('input', (e) => {
+            if (/^#[0-9A-F]{6}$/i.test(e.target.value)) {
+                document.getElementById('primaryColor').value = e.target.value;
+                generateAllIcons();
+            }
+        });
+        
+        document.getElementById('secondaryColor').addEventListener('input', (e) => {
+            document.getElementById('secondaryHex').value = e.target.value;
+            generateAllIcons();
+        });
+        
+        document.getElementById('secondaryHex').addEventListener('input', (e) => {
+            if (/^#[0-9A-F]{6}$/i.test(e.target.value)) {
+                document.getElementById('secondaryColor').value = e.target.value;
+                generateAllIcons();
+            }
+        });
+        
+        // Generate icons on load
+        window.addEventListener('load', generateAllIcons);
+    </script>
+</body>
+</html>

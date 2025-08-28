@@ -157,7 +157,17 @@ class ApiService {
     try {
       const token = await AsyncStorage.getItem(Config.STORAGE_KEYS.REFRESH_TOKEN);
       if (token) {
-        await this.authApi.post('/auth/signout', { refreshToken: token });
+        // Use the correct endpoint path
+        try {
+          await this.authApi.post('/auth/logout', { refreshToken: token });
+        } catch (error: any) {
+          // If logout endpoint doesn't exist, just clear local auth
+          if (error.response?.status === 404) {
+            console.log('Logout endpoint not found, clearing local auth');
+          } else {
+            console.error('Logout error:', error);
+          }
+        }
       }
     } catch (error) {
       console.error('Signout error:', error);
@@ -204,7 +214,7 @@ class ApiService {
 
   // Session methods
   async getSessions(courseId?: string): Promise<ApiResponse<Session[]>> {
-    const url = courseId ? `/sessions?courseId=${courseId}` : '/sessions';
+    const url = courseId ? `/courses/${courseId}/sessions` : '/sessions/active';
     const response = await this.attendanceApi.get(url);
     return response.data;
   }

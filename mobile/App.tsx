@@ -1,10 +1,14 @@
 import React, { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
+import { Provider } from 'react-redux';
+import { PersistGate } from 'redux-persist/integration/react';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import * as SplashScreen from 'expo-splash-screen';
+import { store, persistor } from '@/store';
+import RootNavigator from '@/navigation/RootNavigator';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -36,14 +40,18 @@ export default function App() {
   }
 
   return (
-    <SafeAreaProvider>
-      <PaperProvider>
-        <NavigationContainer>
-          <StatusBar style="auto" />
-          {/* Navigation will go here */}
-          <Toast />
-        </NavigationContainer>
-      </PaperProvider>
-    </SafeAreaProvider>
+    <Provider store={store}>
+      <PersistGate loading={null} persistor={persistor}>
+        <SafeAreaProvider>
+          <PaperProvider>
+            <NavigationContainer>
+              <StatusBar style="auto" />
+              <RootNavigator />
+              <Toast />
+            </NavigationContainer>
+          </PaperProvider>
+        </SafeAreaProvider>
+      </PersistGate>
+    </Provider>
   );
 }

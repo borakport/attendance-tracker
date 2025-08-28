@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPS Attendance Icon Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px;
+            color: white;
+        }
+        
+        h1 {
+            margin-bottom: 10px;
+            font-size: 32px;
+            text-align: center;
+        }
+        
+        .subtitle {
+            margin-bottom: 40px;
+            opacity: 0.9;
+            text-align: center;
+        }
+        
+        .section {
+            margin-bottom: 40px;
+            padding: 30px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            max-width: 1000px;
+            width: 100%;
+        }
+        
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 24px;
+            text-align: center;
+        }
+        
+        .section p {
+            color: #666;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .icon-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            justify-items: center;
+        }
+        
+        .icon-preview {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid #e1e1e1;
+            text-align: center;
+            width: 100%;
+            max-width: 220px;
+        }
+        
+        .icon-preview h4 {
+            margin: 0 0 15px 0;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .icon-preview svg {
+            margin-bottom: 15px;
+        }
+        
+        .download-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .download-all-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        
+        .download-all-btn:hover {
+            background: #ee5a52;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎨 GPS Attendance App Icons - Design Options</h1>
+    <p class="subtitle">Choose your preferred design and download all 4 required assets (icon.png, adaptive-icon.png, splash.png, favicon.png)</p>
+    
+    <!-- ========== OPTION 1: CLEAN MINIMAL ========== -->
+    <div class="section">
+        <h2>🎯 Option 1: Clean Minimal (Recommended)</h2>
+        <p>Simple, clean design focusing on the location pin with GPS signals. No text clutter.</p>
+        
+        <div class="icon-container">
+            <!-- App Icon Option 1 -->
+            <div class="icon-preview">
+                <h4>App Icon (1024x1024)</h4>
+                <svg width="150" height="150" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Background with transparency -->
+                    <defs>
+                        <filter id="shadow1" x="-50%" y="-50%" width="200%" height="200%">
+                            <feDropShadow dx="0" dy="8" stdDeviation="16" flood-opacity="0.3"/>
+                        </filter>
+                    </defs>
+                    
+                    <!-- GPS Signal Rings (Radar) -->
+                    <g opacity="0.6">
+                        <circle cx="512" cy="512" r="300" fill="none" stroke="#667eea" stroke-width="6" opacity="0.3"/>
+                        <circle cx="512" cy="512" r="220" fill="none" stroke="#667eea" stroke-width="8" opacity="0.5"/>
+                        <circle cx="512" cy="512" r="140" fill="none" stroke="#667eea" stroke-width="10" opacity="0.7"/>
+                        <circle cx="512" cy="512" r="80" fill="none" stroke="#667eea" stroke-width="12" opacity="0.9"/>
+                    </g>
+                    
+                    <!-- GPS Location Pin -->
+                    <g transform="translate(512, 512)">
+                        <path d="M-60,-80 C-60,-113 -33,-140 0,-140 C33,-140 60,-113 60,-80 C60,-47 0,60 0,60 C0,60 -60,-47 -60,-80 Z" 
+                              fill="#ff6b6b" filter="url(#shadow1)"/>
+                        <circle cx="0" cy="-80" r="25" fill="white"/>
+                        <path d="M-12,-86 L-6,-80 L12,-98" stroke="#667eea" stroke-width="6" 
+                              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    </g>
+                    
+                    <!-- Bottom Pulse Circle -->
+                    <circle cx="512" cy="650" r="20" fill="#4fd1c7" opacity="0.8"/>
+                </svg>
+                <br>
+                <button class="download-btn" onclick="downloadIconSet(1, 'clean')">Download Set 1</button>
+            </div>
+            
+            <!-- Adaptive Icon Option 1 -->
+            <div class="icon-preview">
+                <h4>Adaptive Icon (1024x1024)</h4>
+                <svg width="150" height="150" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+                    <!-- GPS Signal Rings -->
+                    <g opacity="0.6">
+                        <circle cx="512" cy="512" r="350" fill="none" stroke="#667eea" stroke-width="8" opacity="0.3"/>
+                        <circle cx="512" cy="512" r="270" fill="none" stroke="#667eea" stroke-width="10" opacity="0.5"/>
+                        <circle cx="512" cy="512" r="190" fill="none" stroke="#667eea" stroke-width="12" opacity="0.7"/>
+                        <circle cx="512" cy="512" r="110" fill="none" stroke="#667eea" stroke-width="14" opacity="0.9"/>
+                    </g>
+                    
+                    <!-- Large GPS Pin -->
+                    <g transform="translate(512, 512)">
+                        <path d="M-80,-100 C-80,-144 -44,-180 0,-180 C44,-180 80,-144 80,-100 C80,-56 0,80 0,80 C0,80 -80,-56 -80,-100 Z" 
+                              fill="#ff6b6b"/>
+                        <circle cx="0" cy="-100" r="35" fill="white"/>
+                        <path d="M-18,-108 L-8,-98 L18,-125" stroke="#667eea" stroke-width="8" 
+                              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    </g>
+                </svg>
+            </div>
+            
+            <!-- Splash Screen Option 1 -->
+            <div class="icon-preview">
+                <h4>Splash Screen (1242x2436)</h4>
+                <svg width="60" height="118" viewBox="0 0 1242 2436" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Center Icon -->
+                    <g transform="translate(621, 1218)">
+                        <path d="M-80,-100 C-80,-144 -44,-180 0,-180 C44,-180 80,-144 80,-100 C80,-56 0,80 0,80 C0,80 -80,-56 -80,-100 Z" 
+                              fill="#ff6b6b"/>
+                        <circle cx="0" cy="-100" r="35" fill="white"/>
+                        <path d="M-18,-108 L-8,-98 L18,-125" stroke="#667eea" stroke-width="8" 
+                              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    </g>
+                    
+                    <!-- Signal rings -->
+                    <g opacity="0.4">
+                        <circle cx="621" cy="1118" r="200" fill="none" stroke="#667eea" stroke-width="6"/>
+                        <circle cx="621" cy="1118" r="150" fill="none" stroke="#667eea" stroke-width="8"/>
+                        <circle cx="621" cy="1118" r="100" fill="none" stroke="#667eea" stroke-width="10"/>
+                    </g>
+                    
+                    <!-- Text -->
+                    <text x="621" y="1450" text-anchor="middle" font-family="Arial, sans-serif" 
+                          font-size="60" font-weight="300" fill="#667eea">GPS ATTENDANCE</text>
+                </svg>
+            </div>
+            
+            <!-- Favicon Option 1 -->
+            <div class="icon-preview">
+                <h4>Favicon (48x48)</h4>
+                <svg width="100" height="100" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                    <!-- GPS Pin -->
+                    <path d="M24,8 C20,8 17,11 17,15 C17,19 24,28 24,28 C24,28 31,19 31,15 C31,11 28,8 24,8 Z" fill="#ff6b6b"/>
+                    <circle cx="24" cy="15" r="4" fill="white"/>
+                    <path d="M22.5,14.5 L23.5,15.5 L25.5,13.5" stroke="#667eea" stroke-width="1.5" 
+                          stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    
+                    <!-- Signal rings -->
+                    <g opacity="0.5">
+                        <circle cx="24" cy="15" r="20" fill="none" stroke="#667eea" stroke-width="1"/>
+                        <circle cx="24" cy="15" r="15" fill="none" stroke="#667eea" stroke-width="1.5"/>
+                        <circle cx="24" cy="15" r="10" fill="none" stroke="#667eea" stroke-width="2"/>
+                    </g>
+                </svg>
+            </div>
+        </div>
+        <div style="text-align: center;">
+            <button class="download-all-btn" onclick="downloadAllIcons(1, 'clean-minimal')">📥 Download All Option 1 Icons</button>
+        </div>
+    </div>
+
+    <script>
+        function downloadAllIcons(option, setName) {
+            console.log(`Downloading all icons for option ${option}: ${setName}`);
+            
+            // Create transparent canvas icons
+            const icons = [
+                { name: 'icon.png', size: 1024 },
+                { name: 'adaptive-icon.png', size: 1024 },
+                { name: 'splash.png', width: 1242, height: 2436 },
+                { name: 'favicon.png', size: 48 }
+            ];
+            
+            icons.forEach((icon, index) => {
+                setTimeout(() => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    if (icon.width && icon.height) {
+                        canvas.width = icon.width;
+                        canvas.height = icon.height;
+                    } else {
+                        canvas.width = icon.size;
+                        canvas.height = icon.size;
+                    }
+                    
+                    // Clear canvas to transparent
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    
+                    // Draw transparent icon based on type
+                    drawTransparentIcon(ctx, icon.name, canvas.width, canvas.height);
+                    
+                    // Download
+                    const link = document.createElement('a');
+                    link.download = icon.name;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                }, index * 1000);
+            });
+            
+            setTimeout(() => {
+                alert(`✅ All ${setName} icons downloaded with transparent backgrounds!`);
+            }, 5000);
+        }
+        
+        function drawTransparentIcon(ctx, filename, width, height) {
+            const centerX = width / 2;
+            const centerY = height / 2;
+            
+            // Enable anti-aliasing
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            
+            if (filename === 'splash.png') {
+                // Splash screen layout
+                const pinSize = 60;
+                const pinY = centerY - 50;
+                
+                // Draw radar rings
+                const rings = [150, 120, 90];
+                rings.forEach((radius, i) => {
+                    ctx.strokeStyle = `rgba(102, 126, 234, ${0.3 + i * 0.2})`;
+                    ctx.lineWidth = 6 + i * 2;
+                    ctx.beginPath();
+                    ctx.arc(centerX, pinY, radius, 0, Math.PI * 2);
+                    ctx.stroke();
+                });
+                
+                // Draw pin
+                drawGPSPin(ctx, centerX, pinY, pinSize);
+                
+                // Draw text
+                ctx.fillStyle = '#667eea';
+                ctx.font = '40px Arial, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('GPS ATTENDANCE', centerX, centerY + 150);
+                
+            } else if (filename === 'favicon.png') {
+                // Favicon - simple pin only
+                drawGPSPin(ctx, centerX, centerY - 5, 15);
+                
+                // Small rings
+                [18, 15, 12].forEach((radius, i) => {
+                    ctx.strokeStyle = `rgba(102, 126, 234, ${0.4 + i * 0.2})`;
+                    ctx.lineWidth = 1 + i * 0.5;
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY - 5, radius, 0, Math.PI * 2);
+                    ctx.stroke();
+                });
+                
+            } else {
+                // Regular icons - full design
+                const pinSize = width * 0.08;
+                
+                // Draw radar rings
+                const maxRadius = width * 0.35;
+                for (let i = 1; i <= 4; i++) {
+                    const radius = (maxRadius / 4) * i;
+                    const opacity = 1 - (i * 0.15);
+                    
+                    ctx.strokeStyle = `rgba(102, 126, 234, ${opacity * 0.6})`;
+                    ctx.lineWidth = width * 0.006;
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+                
+                // Draw GPS pin
+                drawGPSPin(ctx, centerX, centerY, pinSize);
+                
+                // Draw pulse dot
+                ctx.fillStyle = 'rgba(102, 126, 234, 0.8)';
+                ctx.beginPath();
+                ctx.arc(centerX, centerY + width * 0.15, width * 0.015, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        function drawGPSPin(ctx, x, y, size) {
+            // Pin body
+            ctx.fillStyle = '#ff6b6b';
+            ctx.beginPath();
+            ctx.arc(x, y - size * 0.3, size * 0.6, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Pin point
+            ctx.beginPath();
+            ctx.moveTo(x - size * 0.3, y + size * 0.3);
+            ctx.lineTo(x + size * 0.3, y + size * 0.3);
+            ctx.lineTo(x, y + size * 1.0);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Inner white circle
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(x, y - size * 0.3, size * 0.25, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Checkmark
+            ctx.strokeStyle = '#667eea';
+            ctx.lineWidth = size * 0.08;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.beginPath();
+            ctx.moveTo(x - size * 0.15, y - size * 0.35);
+            ctx.lineTo(x - size * 0.05, y - size * 0.25);
+            ctx.lineTo(x + size * 0.15, y - size * 0.45);
+            ctx.stroke();
+        }
+        
+        function downloadIconSet(option, setName) {
+            downloadAllIcons(option, setName);
+        }
+    </script>
+</body>
+</html>
