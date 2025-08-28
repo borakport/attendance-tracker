@@ -1,0 +1,123 @@
+{
+  "expo": {
+    "name": "GPS Attendance",
+    "slug": "gps-attendance",
+    "scheme": "gpsattendance",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "owner": "borakport",
+    "platforms": [
+      "ios",
+      "android"
+    ],
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#667eea"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.borakport.gpsattendance",
+      "buildNumber": "1",
+      "config": {
+        "usesNonExemptEncryption": false
+      },
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "GPS Attendance needs your location to verify your attendance at sessions.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "GPS Attendance needs your location to track attendance automatically.",
+        "NSLocationAlwaysUsageDescription": "GPS Attendance needs continuous location access for automatic attendance tracking.",
+        "NSCameraUsageDescription": "GPS Attendance needs camera access to take attendance selfies.",
+        "NSPhotoLibraryUsageDescription": "GPS Attendance needs photo library access to select profile pictures.",
+        "NSPhotoLibraryAddUsageDescription": "GPS Attendance needs permission to save photos to your library.",
+        "NSMicrophoneUsageDescription": "GPS Attendance needs microphone access for video recordings.",
+        "NSFaceIDUsageDescription": "GPS Attendance uses Face ID for secure authentication.",
+        "NSUserTrackingUsageDescription": "This app uses tracking to improve your experience."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#667eea"
+      },
+      "package": "com.borakport.gpsattendance",
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.INTERNET",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.VIBRATE",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.WAKE_LOCK",
+        "android.permission.USE_FINGERPRINT",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.RECORD_AUDIO"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": ""
+        }
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-location",
+      "expo-task-manager",
+      "expo-notifications",
+      "expo-camera",
+      "expo-image-picker",
+      "expo-media-library",
+      "expo-secure-store",
+      "expo-local-authentication",
+      "expo-sensors",
+      "expo-background-fetch",
+      "expo-dev-client",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 34,
+            "targetSdkVersion": 34,
+            "buildToolsVersion": "34.0.0",
+            "minSdkVersion": 23,
+            "kotlinVersion": "1.9.0",
+            "enableProguardInReleaseBuilds": false,
+            "enableShrinkResourcesInReleaseBuilds": false,
+            "useLegacyPackaging": true
+          },
+          "ios": {
+            "deploymentTarget": "13.4",
+            "useFrameworks": "static"
+          }
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#667eea",
+          "defaultChannel": "default"
+        }
+      ]
+    ],
+    "experiments": {
+      "tsconfigPaths": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "b4b42705-6fd4-4463-afac-e7980d30efe5"
+      }
+    }
+  }
+}

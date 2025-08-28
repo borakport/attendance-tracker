@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>GPS Attendance Icon Generator - Multiple Options</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .section {
+            margin-bottom: 40px;
+            padding: 20px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .section h2 {
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .icon-container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .icon-preview {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #e1e1e1;
+            text-align: center;
+            min-width: 250px;
+        }
+        .icon-preview h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 14px;
+        }
+        .download-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 12px;
+        }
+        .download-btn:hover {
+            background: #5a6fd8;
+        }
+        .download-all-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .download-all-btn:hover {
+            background: #ee5a52;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎨 GPS Attendance App Icons - Design Options</h1>
+    <p>Choose your preferred design and download all 4 required assets (icon.png, adaptive-icon.png, splash.png, favicon.png)</p>
+    
+    <!-- ========== OPTION 1: CLEAN MINIMAL ========== -->
+    <div class="section">
+        <h2>🎯 Option 1: Clean Minimal (Recommended)</h2>
+        <p>Simple, clean design focusing on the location pin with GPS signals. No text clutter.</p>
+        
+        <div class="icon-container">
+            <!-- App Icon Option 1 -->
+            <div class="icon-preview">
+                <h4>App Icon (1024x1024)</h4>
+                <svg id="app-icon-1" width="150" height="150" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="bgGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                        </linearGradient>
+                        <linearGradient id="pinGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#ff6b6b;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#ee5a52;stop-opacity:1" />
+                        </linearGradient>
+                        <filter id="shadow1" x="-50%" y="-50%" width="200%" height="200%">
+                            <feDropShadow dx="0" dy="8" stdDeviation="16" flood-opacity="0.3"/>
+                        </filter>
+                    </defs>
+                    
+                    <!-- Background Circle -->
+                    <circle cx="512" cy="512" r="480" fill="url(#bgGradient1)" stroke="#5a67d8" stroke-width="12"/>
+                    
+                    <!-- Location Pin (Centered) -->
+                    <g transform="translate(512, 460)">
+                        <path d="M-80,-100 C-80,-144 -44,-180 0,-180 C44,-180 80,-144 80,-100 C80,-56 0,80 0,80 C0,80 -80,-56 -80,-100 Z" 
+                              fill="url(#pinGradient1)" filter="url(#shadow1)"/>
+                        <circle cx="0" cy="-100" r="35" fill="white"/>
+                        <path d="M-18,-108 L-8,-98 L18,-125" stroke="#667eea" stroke-width="8" 
+                              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    </g>
+                    
+                    <!-- GPS Signal Rings -->
+                    <g opacity="0.7">
+                        <circle cx="512" cy="360" r="220" fill="none" stroke="white" stroke-width="6" opacity="0.4"/>
+                        <circle cx="512" cy="360" r="170" fill="none" stroke="white" stroke-width="8" opacity="0.6"/>
+                        <circle cx="512" cy="360" r="120" fill="none" stroke="white" stroke-width="10" opacity="0.8"/>
+                    </g>
+                    
+                    <!-- Bottom Accent Circle -->
+                    <circle cx="512" cy="720" r="60" fill="rgba(255,255,255,0.2)" stroke="white" stroke-width="4"/>
+                    <circle cx="512" cy="720" r="25" fill="#4fd1c7"/>
+                </svg>
+                <br>
+                <button class="download-btn" onclick="downloadIconSet(1, 'clean')">Download Set 1</button>
+            </div>
+            
+            <!-- Adaptive Icon Option 1 -->
+            <div class="icon-preview">
+                <h4>Adaptive Icon (1024x1024)</h4>
+                <svg id="adaptive-icon-1" width="150" height="150" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="bgGradient1a" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                        </linearGradient>
+                        <linearGradient id="pinGradient1a" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#ff6b6b;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#ee5a52;stop-opacity:1" />
+                        </linearGradient>
+                        <filter id="shadow1a">
+                            <feDropShadow dx="0" dy="12" stdDeviation="20" flood-opacity="0.4"/>
+                        </filter>
+                    </defs>
+                    
+                    <!-- Background -->
+                    <rect x="0" y="0" width="1024" height="1024" fill="url(#bgGradient1a)"/>
+                    
+                    <!-- Large Pin -->
+                    <g transform="translate(512, 512)">
+                        <path d="M-120,-160 C-120,-226 -66,-280 0,-280 C66,-280 120,-226 120,-160 C120,-94 0,120 0,120 C0,120 -120,-94 -120,-160 Z" 
+                              fill="url(#pinGradient1a)" filter="url(#shadow1a)"/>
+                        <circle cx="0" cy="-160" r="55" fill="white"/>
+                        <path d="M-28,-172 L-12,-156 L28,-196" stroke="#667eea" stroke-width="14" 
+                              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    </g>
+                    
+                    <!-- GPS Rings -->
+                    <g opacity="0.6">
+                        <circle cx="512" cy="352" r="320" fill="none" stroke="white" stroke-width="8" opacity="0.3"/>
+                        <circle cx="512" cy="352" r="250" fill="none" stroke="white" stroke-width="12" opacity="0.5"/>
+                        <circle cx="512" cy="352" r="180" fill="none" stroke="white" stroke-width="16" opacity="0.7"/>
+                    </g>
+                </svg>
+            </div>
+            
+            <!-- Splash Screen Option 1 -->
+            <div class="icon-preview">
+                <h4>Splash Screen (1242x2436)</h4>
+                <svg id="splash-1" width="60" height="118" viewBox="0 0 1242 2436" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="splashGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                            <stop offset="50%" style="stop-color:#764ba2;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#f093fb;stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                    
+                    <rect x="0" y="0" width="1242" height="2436" fill="url(#splashGradient1)"/>
+                    
+                    <!-- Center Icon -->
+                    <g transform="translate(621, 1218)">
+                        <path d="M-100,-120 C-100,-176 -55,-220 0,-220 C55,-220 100,-176 100,-120 C100,-64 0,80 0,80 C0,80 -100,-64 -100,-120 Z" 
+                              fill="#ff6b6b"/>
+                        <circle cx="0" cy="-120" r="40" fill="white"/>
+                        <path d="M-20,-128 L-8,-116 L20,-144" stroke="#667eea" stroke-width="10" 
+                              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    </g>
+                    
+                    <!-- Signal rings -->
+                    <g opacity="0.4">
+                        <circle cx="621" cy="1098" r="200" fill="none" stroke="white" stroke-width="6"/>
+                        <circle cx="621" cy="1098" r="150" fill="none" stroke="white" stroke-width="8"/>
+                        <circle cx="621" cy="1098" r="100" fill="none" stroke="white" stroke-width="10"/>
+                    </g>
+                    
+                    <!-- Minimal text -->
+                    <text x="621" y="1450" text-anchor="middle" font-family="Arial, sans-serif" 
+                          font-size="80" font-weight="300" fill="rgba(255,255,255,0.9)">GPS ATTENDANCE</text>
+                </svg>
+            </div>
+            
+            <!-- Favicon Option 1 -->
+            <div class="icon-preview">
+                <h4>Favicon (48x48)</h4>
+                <svg id="favicon-1" width="100" height="100" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="24" cy="24" r="22" fill="#667eea" stroke="#5a67d8" stroke-width="2"/>
+                    <path d="M24,10 C20,10 17,13 17,17 C17,21 24,30 24,30 C24,30 31,21 31,17 C31,13 28,10 24,10 Z" fill="#ff6b6b"/>
+                    <circle cx="24" cy="17" r="4" fill="white"/>
+                    <path d="M22.5,16.5 L23.5,17.5 L25.5,15.5" stroke="#667eea" stroke-width="1.5" 
+                          stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+            </div>
+        </div>
+        <div style="text-align: center;">
+            <button class="download-all-btn" onclick="downloadAllIcons(1, 'clean-minimal')">📥 Download All Option 1 Icons</button>
+        </div>
+    </div>
+
+    <!-- ========== OPTION 2: GRADIENT RINGS ========== -->
+    <div class="section">
+        <h2>🌟 Option 2: Gradient Rings</h2>
+        <p>More dynamic look with colorful gradient rings and enhanced GPS visualization.</p>
+        
+        <div class="icon-container">
+            <!-- App Icon Option 2 -->
+            <div class="icon-preview">
+                <h4>App Icon (1024x1024)</h4>
+                <svg id="app-icon-2" width="150" height="150" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="bgGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#4facfe;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#00f2fe;stop-opacity:1" />
+                        </linearGradient>
+                        <linearGradient id="ringGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#ff9a9e;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#fecfef;stop-opacity:1" />
+                        </linearGradient>
+                        <linearGradient id="pinGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#fa709a;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#fee140;stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                    
+                    <circle cx="512" cy="512" r="480" fill="url(#bgGradient2)" stroke="#2196f3" stroke-width="12"/>
+                    
+                    <!-- Colorful GPS Rings -->
+                    <g opacity="0.8">
+                        <circle cx="512" cy="360" r="240" fill="none" stroke="url(#ringGradient2)" stroke-width="8" opacity="0.5"/>
+                        <circle cx="512" cy="360" r="180" fill="none" stroke="url(#ringGradient2)" stroke-width="10" opacity="0.7"/>
+                        <circle cx="512" cy="360" r="120" fill="none" stroke="url(#ringGradient2)" stroke-width="12" opacity="0.9"/>
+                    </g>
+                    
+                    <!-- Center Pin -->
+                    <g transform="translate(512, 460)">
+                        <path d="M-75,-95 C-75,-137 -41,-170 0,-170 C41,-170 75,-137 75,-95 C75,-53 0,75 0,75 C0,75 -75,-53 -75,-95 Z" 
+                              fill="url(#pinGradient2)"/>
+                        <circle cx="0" cy="-95" r="32" fill="white"/>
+                        <path d="M-16,-103 L-7,-94 L16,-118" stroke="#2196f3" stroke-width="7" 
+                              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    </g>
+                </svg>
+                <br>
+                <button class="download-btn" onclick="downloadIconSet(2, 'gradient')">Download Set 2</button>
+            </div>
+            
+            <!-- Show other icons for Option 2 similarly -->
+            <div class="icon-preview">
+                <h4>All sizes included</h4>
+                <p style="font-size: 12px; color: #666;">Adaptive icon, splash screen, and favicon will be generated with the same gradient ring style.</p>
+            </div>
+        </div>
+        <div style="text-align: center;">
+            <button class="download-all-btn" onclick="downloadAllIcons(2, 'gradient-rings')">📥 Download All Option 2 Icons</button>
+        </div>
+    </div>
+
+    <!-- ========== OPTION 3: MODERN FLAT ========== -->
+    <div class="section">
+        <h2>🎨 Option 3: Modern Flat</h2>
+        <p>Clean flat design with solid colors and geometric shapes. Very modern and minimalist.</p>
+        
+        <div class="icon-container">
+            <!-- App Icon Option 3 -->
+            <div class="icon-preview">
+                <h4>App Icon (1024x1024)</h4>
+                <svg id="app-icon-3" width="150" height="150" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="bgGradient3" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                    
+                    <!-- Rounded square background -->
+                    <rect x="32" y="32" width="960" height="960" rx="160" ry="160" fill="url(#bgGradient3)"/>
+                    
+                    <!-- Geometric GPS indicator -->
+                    <g transform="translate(512, 400)">
+                        <!-- Hexagonal rings -->
+                        <polygon points="-120,-69 -60,-138 60,-138 120,-69 60,0 -60,0" 
+                                 fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="6"/>
+                        <polygon points="-80,-46 -40,-92 40,-92 80,-46 40,0 -40,0" 
+                                 fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="8"/>
+                        <polygon points="-40,-23 -20,-46 20,-46 40,-23 20,0 -20,0" 
+                                 fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="10"/>
+                        
+                        <!-- Center pin -->
+                        <circle cx="0" cy="-20" r="50" fill="#ff6b6b"/>
+                        <circle cx="0" cy="-20" r="20" fill="white"/>
+                        <path d="M-10,-25 L-3,-18 L10,-30" stroke="#667eea" stroke-width="4" 
+                              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    </g>
+                    
+                    <!-- Bottom geometric accent -->
+                    <g transform="translate(512, 700)">
+                        <rect x="-30" y="-30" width="60" height="60" rx="10" fill="rgba(255,255,255,0.9)"/>
+                        <circle cx="0" cy="0" r="15" fill="#4fd1c7"/>
+                    </g>
+                </svg>
+                <br>
+                <button class="download-btn" onclick="downloadIconSet(3, 'modern')">Download Set 3</button>
+            </div>
+            
+            <div class="icon-preview">
+                <h4>All sizes included</h4>
+                <p style="font-size: 12px; color: #666;">Flat design style will be applied to all icon sizes with geometric elements.</p>
+            </div>
+        </div>
+        <div style="text-align: center;">
+            <button class="download-all-btn" onclick="downloadAllIcons(3, 'modern-flat')">📥 Download All Option 3 Icons</button>
+        </div>
+    </div>
+
+    <script>
+        // Store icon configurations for each option
+        const iconOptions = {
+            1: {
+                name: 'clean-minimal',
+                colors: {
+                    bg: ['#667eea', '#764ba2'],
+                    pin: ['#ff6b6b', '#ee5a52'],
+                    accent: '#4fd1c7'
+                }
+            },
+            2: {
+                name: 'gradient-rings',
+                colors: {
+                    bg: ['#4facfe', '#00f2fe'],
+                    pin: ['#fa709a', '#fee140'],
+                    accent: '#2196f3'
+                }
+            },
+            3: {
+                name: 'modern-flat',
+                colors: {
+                    bg: ['#667eea', '#764ba2'],
+                    pin: '#ff6b6b',
+                    accent: '#4fd1c7'
+                }
+            }
+        };
+
+        function generateIconSVG(option, type, width, height = null) {
+            height = height || width;
+            const config = iconOptions[option];
+            
+            let svgContent = '';
+            
+            if (type === 'icon') {
+                // Generate app icon based on option
+                switch(option) {
+                    case 1:
+                        svgContent = generateCleanIcon(width, height);
+                        break;
+                    case 2:
+                        svgContent = generateGradientIcon(width, height);
+                        break;
+                    case 3:
+                        svgContent = generateModernIcon(width, height);
+                        break;
+                }
+            } else if (type === 'adaptive') {
+                // Generate adaptive icon
+                svgContent = generateAdaptiveIcon(option, width, height);
+            } else if (type === 'splash') {
+                // Generate splash screen
+                svgContent = generateSplashScreen(option, width, height);
+            } else if (type === 'favicon') {
+                // Generate favicon
+                svgContent = generateFavicon(option, width, height);
+            }
+            
+            return svgContent;
+        }
+
+        function generateCleanIcon(width, height) {
+            return `
+            <svg width="${width}" height="${height}" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                    </linearGradient>
+                    <linearGradient id="pin" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#ff6b6b;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#ee5a52;stop-opacity:1" />
+                    </linearGradient>
+                    <filter id="shadow">
+                        <feDropShadow dx="0" dy="8" stdDeviation="16" flood-opacity="0.3"/>
+                    </filter>
+                </defs>
+                
+                <circle cx="512" cy="512" r="480" fill="url(#bg)" stroke="#5a67d8" stroke-width="12"/>
+                
+                <g transform="translate(512, 460)">
+                    <path d="M-80,-100 C-80,-144 -44,-180 0,-180 C44,-180 80,-144 80,-100 C80,-56 0,80 0,80 C0,80 -80,-56 -80,-100 Z" 
+                          fill="url(#pin)" filter="url(#shadow)"/>
+                    <circle cx="0" cy="-100" r="35" fill="white"/>
+                    <path d="M-18,-108 L-8,-98 L18,-125" stroke="#667eea" stroke-width="8" 
+                          stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </g>
+                
+                <g opacity="0.7">
+                    <circle cx="512" cy="360" r="220" fill="none" stroke="white" stroke-width="6" opacity="0.4"/>
+                    <circle cx="512" cy="360" r="170" fill="none" stroke="white" stroke-width="8" opacity="0.6"/>
+                    <circle cx="512" cy="360" r="120" fill="none" stroke="white" stroke-width="10" opacity="0.8"/>
+                </g>
+                
+                <circle cx="512" cy="720" r="60" fill="rgba(255,255,255,0.2)" stroke="white" stroke-width="4"/>
+                <circle cx="512" cy="720" r="25" fill="#4fd1c7"/>
+            </svg>`;
+        }
+
+        function generateGradientIcon(width, height) {
+            return `
+            <svg width="${width}" height="${height}" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="bg2" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#4facfe;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#00f2fe;stop-opacity:1" />
+                    </linearGradient>
+                    <linearGradient id="ring2" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#ff9a9e;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#fecfef;stop-opacity:1" />
+                    </linearGradient>
+                    <linearGradient id="pin2" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#fa709a;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#fee140;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+                
+                <circle cx="512" cy="512" r="480" fill="url(#bg2)" stroke="#2196f3" stroke-width="12"/>
+                
+                <g opacity="0.8">
+                    <circle cx="512" cy="360" r="240" fill="none" stroke="url(#ring2)" stroke-width="8" opacity="0.5"/>
+                    <circle cx="512" cy="360" r="180" fill="none" stroke="url(#ring2)" stroke-width="10" opacity="0.7"/>
+                    <circle cx="512" cy="360" r="120" fill="none" stroke="url(#ring2)" stroke-width="12" opacity="0.9"/>
+                </g>
+                
+                <g transform="translate(512, 460)">
+                    <path d="M-75,-95 C-75,-137 -41,-170 0,-170 C41,-170 75,-137 75,-95 C75,-53 0,75 0,75 C0,75 -75,-53 -75,-95 Z" 
+                          fill="url(#pin2)"/>
+                    <circle cx="0" cy="-95" r="32" fill="white"/>
+                    <path d="M-16,-103 L-7,-94 L16,-118" stroke="#2196f3" stroke-width="7" 
+                          stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </g>
+            </svg>`;
+        }
+
+        function generateModernIcon(width, height) {
+            return `
+            <svg width="${width}" height="${height}" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="bg3" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+                
+                <rect x="32" y="32" width="960" height="960" rx="160" ry="160" fill="url(#bg3)"/>
+                
+                <g transform="translate(512, 400)">
+                    <polygon points="-120,-69 -60,-138 60,-138 120,-69 60,0 -60,0" 
+                             fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="6"/>
+                    <polygon points="-80,-46 -40,-92 40,-92 80,-46 40,0 -40,0" 
+                             fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="8"/>
+                    <polygon points="-40,-23 -20,-46 20,-46 40,-23 20,0 -20,0" 
+                             fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="10"/>
+                    
+                    <circle cx="0" cy="-20" r="50" fill="#ff6b6b"/>
+                    <circle cx="0" cy="-20" r="20" fill="white"/>
+                    <path d="M-10,-25 L-3,-18 L10,-30" stroke="#667eea" stroke-width="4" 
+                          stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </g>
+                
+                <g transform="translate(512, 700)">
+                    <rect x="-30" y="-30" width="60" height="60" rx="10" fill="rgba(255,255,255,0.9)"/>
+                    <circle cx="0" cy="0" r="15" fill="#4fd1c7"/>
+                </g>
+            </svg>`;
+        }
+
+        function generateAdaptiveIcon(option, width, height) {
+            // Similar structure but adapted for Android adaptive icons
+            const baseIcon = generateIconSVG(option, 'icon', width, height);
+            return baseIcon.replace(/circle cx="512" cy="512" r="480"/, 
+                                  'rect x="0" y="0" width="1024" height="1024"');
+        }
+
+        function generateSplashScreen(option, width, height) {
+            const config = iconOptions[option];
+            return `
+            <svg width="${width}" height="${height}" viewBox="0 0 1242 2436" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="splash${option}" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:${config.colors.bg[0]};stop-opacity:1" />
+                        <stop offset="50%" style="stop-color:${config.colors.bg[1]};stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#f093fb;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+                
+                <rect x="0" y="0" width="1242" height="2436" fill="url(#splash${option})"/>
+                
+                <g transform="translate(621, 1218)">
+                    <path d="M-100,-120 C-100,-176 -55,-220 0,-220 C55,-220 100,-176 100,-120 C100,-64 0,80 0,80 C0,80 -100,-64 -100,-120 Z" 
+                          fill="${Array.isArray(config.colors.pin) ? config.colors.pin[0] : config.colors.pin}"/>
+                    <circle cx="0" cy="-120" r="40" fill="white"/>
+                    <path d="M-20,-128 L-8,-116 L20,-144" stroke="${config.colors.accent}" stroke-width="10" 
+                          stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </g>
+                
+                <g opacity="0.4">
+                    <circle cx="621" cy="1098" r="200" fill="none" stroke="white" stroke-width="6"/>
+                    <circle cx="621" cy="1098" r="150" fill="none" stroke="white" stroke-width="8"/>
+                    <circle cx="621" cy="1098" r="100" fill="none" stroke="white" stroke-width="10"/>
+                </g>
+                
+                <text x="621" y="1450" text-anchor="middle" font-family="Arial, sans-serif" 
+                      font-size="80" font-weight="300" fill="rgba(255,255,255,0.9)">GPS ATTENDANCE</text>
+            </svg>`;
+        }
+
+        function generateFavicon(option, width, height) {
+            const config = iconOptions[option];
+            return `
+            <svg width="${width}" height="${height}" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="24" cy="24" r="22" fill="${config.colors.bg[0]}" stroke="${config.colors.accent}" stroke-width="2"/>
+                <path d="M24,10 C20,10 17,13 17,17 C17,21 24,30 24,30 C24,30 31,21 31,17 C31,13 28,10 24,10 Z" 
+                      fill="${Array.isArray(config.colors.pin) ? config.colors.pin[0] : config.colors.pin}"/>
+                <circle cx="24" cy="17" r="4" fill="white"/>
+                <path d="M22.5,16.5 L23.5,17.5 L25.5,15.5" stroke="${config.colors.accent}" stroke-width="1.5" 
+                      stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </svg>`;
+        }
+
+        function downloadSVGAsImage(svgContent, filename, width, height = null) {
+            height = height || width;
+            
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = width;
+            canvas.height = height;
+            
+            const img = new Image();
+            const svgBlob = new Blob([svgContent], {type: 'image/svg+xml;charset=utf-8'});
+            const url = URL.createObjectURL(svgBlob);
+            
+            img.onload = function() {
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                
+                canvas.toBlob(function(blob) {
+                    const link = document.createElement('a');
+                    link.download = filename;
+                    link.href = URL.createObjectURL(blob);
+                    link.click();
+                    URL.revokeObjectURL(url);
+                    URL.revokeObjectURL(link.href);
+                });
+            };
+            
+            img.src = url;
+        }
+
+        function downloadAllIcons(option, setName) {
+            console.log(`Downloading all icons for option ${option}: ${setName}`);
+            
+            // Generate and download each icon type
+            const icons = [
+                { type: 'icon', filename: 'icon.png', width: 1024 },
+                { type: 'adaptive', filename: 'adaptive-icon.png', width: 1024 },
+                { type: 'splash', filename: 'splash.png', width: 1242, height: 2436 },
+                { type: 'favicon', filename: 'favicon.png', width: 48 }
+            ];
+            
+            icons.forEach((icon, index) => {
+                setTimeout(() => {
+                    const svgContent = generateIconSVG(option, icon.type, icon.width, icon.height);
+                    downloadSVGAsImage(svgContent, icon.filename, icon.width, icon.height);
+                }, index * 1000); // Stagger downloads by 1 second
+            });
+            
+            // Show completion message
+            setTimeout(() => {
+                alert(`✅ All ${setName} icons downloaded! Check your Downloads folder for:\n• icon.png\n• adaptive-icon.png\n• splash.png\n• favicon.png\n\nMove them to your mobile/assets/ folder and run: npm run build:dev`);
+            }, 5000);
+        }
+
+        function downloadIconSet(option, setName) {
+            downloadAllIcons(option, setName);
+        }
+
+        // Legacy function for individual downloads
+        function downloadSVG(svgId, filename, width, height = null) {
+            const svg = document.getElementById(svgId);
+            const svgData = new XMLSerializer().serializeToString(svg);
+            downloadSVGAsImage(svgData, filename, width, height);
+        }
+    </script>
+</body>
+</html>
