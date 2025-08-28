@@ -181,7 +181,6 @@ async function main() {
       allowLateEntry: true,
       lateMinutes: 15,
       requireSelfie: false,
-      accessCode: 'LEC001',
     },
   });
   console.log('📅 Created session:', session1.name);
@@ -202,7 +201,6 @@ async function main() {
       allowLateEntry: true,
       lateMinutes: 10,
       requireSelfie: true,
-      accessCode: 'LAB001',
     },
   });
   console.log('📅 Created session:', session2.name);

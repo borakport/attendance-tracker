@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Attendance Event Monitor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .connected { background: #d4edda; color: #155724; }
+        .disconnected { background: #f8d7da; color: #721c24; }
+        .log {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            border: 1px solid #dee2e6;
+        }
+        .log-entry {
+            margin-bottom: 8px;
+            padding: 5px;
+            border-left: 3px solid #28a745;
+            background: #f8fff9;
+        }
+        .log-entry.error {
+            border-left-color: #dc3545;
+            background: #fff5f5;
+        }
+        .log-entry.info {
+            border-left-color: #007bff;
+            background: #f0f8ff;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+        }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        input {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 300px;
+        }
+    </style>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Simple Attendance Event Monitor</h1>
+        
+        <div id="status" class="status disconnected">
+            Status: Disconnected
+        </div>
+
+        <div>
+            <input type="text" id="authToken" placeholder="Enter JWT Token (get from auth service)" style="width: 400px;">
+            <button onclick="connect()">Connect & Auto-Join Rooms</button>
+            <button onclick="disconnect()" disabled id="disconnectBtn">Disconnect</button>
+            <button onclick="clearLog()">Clear Log</button>
+        </div>
+
+        <h3>Live Event Log:</h3>
+        <div id="log" class="log">
+            <div class="log-entry info">
+                📋 Instructions:<br>
+                1. Get a JWT token from your auth service<br>
+                2. Paste it in the input field above<br>
+                3. Click "Connect & Auto-Join Rooms"<br>
+                4. The client will automatically join user and session rooms<br>
+                5. Mark attendance in your app to see events here!
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let socket = null;
+
+        function addLog(message, type = 'success') {
+            const log = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.innerHTML = `<span style="color: #666; font-size: 10px;">[${new Date().toLocaleTimeString()}]</span> ${message}`;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function updateStatus(connected) {
+            const status = document.getElementById('status');
+            const disconnectBtn = document.getElementById('disconnectBtn');
+            
+            if (connected) {
+                status.textContent = 'Status: Connected ✅';
+                status.className = 'status connected';
+                disconnectBtn.disabled = false;
+            } else {
+                status.textContent = 'Status: Disconnected ❌';
+                status.className = 'status disconnected';
+                disconnectBtn.disabled = true;
+            }
+        }
+
+        function connect() {
+            const authToken = document.getElementById('authToken').value.trim();
+            
+            if (!authToken) {
+                addLog('❌ Please enter a JWT token first!', 'error');
+                return;
+            }
+
+            addLog('🔌 Connecting to realtime service...', 'info');
+            
+            socket = io('http://localhost:3003', {
+                auth: {
+                    token: authToken
+                }
+            });
+
+            socket.on('connect', () => {
+                addLog(`✅ Connected! Socket ID: ${socket.id}`);
+                updateStatus(true);
+                
+                // Auto-join common rooms for testing
+                addLog('🏠 Auto-joining rooms for event monitoring...', 'info');
+                
+                // Join some test rooms - replace with actual IDs for your tests
+                socket.emit('user:join', 'd68c9d80-4c4e-4fb1-aee1-46416dc4213c');
+                socket.emit('session:monitor', '1a9b4ccb-0fb7-4b1c-a70c-8c68f6e1ff52');
+                
+                addLog('📡 Listening for all attendance events...', 'info');
+            });
+
+            socket.on('disconnect', (reason) => {
+                addLog(`❌ Disconnected: ${reason}`, 'error');
+                updateStatus(false);
+            });
+
+            socket.on('connect_error', (error) => {
+                addLog(`❌ Connection error: ${error.message}`, 'error');
+                updateStatus(false);
+            });
+
+            // Listen for ALL possible events
+            socket.onAny((eventName, data) => {
+                addLog(`📨 Event: <strong>${eventName}</strong><br>Data: <pre>${JSON.stringify(data, null, 2)}</pre>`);
+            });
+
+            // Specific attendance events with enhanced logging
+            socket.on('attendance:marked', (data) => {
+                addLog(`🎯 <strong>ATTENDANCE MARKED!</strong><br>
+                       👤 User: ${data.userName || data.userId}<br>
+                       📋 Status: ${data.status}<br>
+                       📍 Session: ${data.sessionId}<br>
+                       ⏰ Time: ${data.markedAt}`, 'success');
+            });
+
+            socket.on('attendance:confirmed', (data) => {
+                addLog(`✅ <strong>ATTENDANCE CONFIRMED!</strong><br>
+                       📋 Status: ${data.status}<br>
+                       📏 Distance: ${data.distance}m<br>
+                       ⏰ Time: ${data.markedAt}`, 'success');
+            });
+
+            socket.on('session:started', (data) => {
+                addLog(`🔴 <strong>SESSION STARTED!</strong><br>
+                       📝 Name: ${data.sessionName}<br>
+                       🆔 ID: ${data.sessionId}`, 'info');
+            });
+
+            socket.on('session:ended', (data) => {
+                addLog(`🏁 <strong>SESSION ENDED!</strong><br>
+                       🆔 ID: ${data.sessionId}<br>
+                       📊 Stats: ${JSON.stringify(data.stats)}`, 'info');
+            });
+
+            socket.on('course:created', (data) => {
+                addLog(`📚 <strong>COURSE CREATED!</strong><br>
+                       📝 Name: ${data.courseName}<br>
+                       👤 Owner: ${data.ownerId}`, 'info');
+            });
+        }
+
+        function disconnect() {
+            if (socket) {
+                socket.disconnect();
+                addLog('👋 Disconnected manually', 'info');
+                updateStatus(false);
+            }
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+            addLog('🧹 Log cleared', 'info');
+        }
+
+        // Auto-clear auth token field on page load for security
+        window.onload = function() {
+            addLog('🚀 Simple Attendance Event Monitor Ready!', 'info');
+            addLog('💡 Tip: This will auto-join common rooms and listen for ALL events', 'info');
+        };
+    </script>
+</body>
+</html>

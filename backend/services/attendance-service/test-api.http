@@ -1,0 +1,190 @@
+### ==========================================
+### ATTENDANCE SERVICE API TESTS
+### ==========================================
+### Service should be running on http://localhost:3002
+### Auth service must be running on http://localhost:3001
+### First, get auth token from auth service
+
+### Step 1: Get Auth Token (Instructor)
+POST http://localhost:3001/api/v1/auth/signin
+Content-Type: application/json
+
+{
+  "email": "instructor@attendance.com",
+  "password": "Instructor@123"
+}
+
+### Save the accessToken from above response as @authToken
+@authToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxN2QyZjZkYy0xODkzLTQ0OWUtYjA3My0xODk1MDNhZjc4ZGIiLCJlbWFpbCI6Imluc3RydWN0b3JAYXR0ZW5kYW5jZS5jb20iLCJyb2xlIjoiSU5TVFJVQ1RPUiIsImp0aSI6IjUzYTE2MjA5LTcwNDAtNDEyNi1hMTkzLTYwNTJmOTlhMDYxMSIsImlhdCI6MTc1NjMyNTg4MywiZXhwIjoxNzU2MzI2NzgzfQ.x3Z7Qj4yzpBVGovDGMEEI05ULI5oHMmgZGGFUpp3GSs
+
+### Step 2: Get Student Auth Token
+POST http://localhost:3001/api/v1/auth/signin
+Content-Type: application/json
+
+{
+  "email": "student1@attendance.com",
+  "password": "Student@123"
+}
+
+### Save as @studentToken
+@studentToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJkNjhjOWQ4MC00YzRlLTRmYjEtYWVlMS00NjQxNmRjNDIxM2MiLCJlbWFpbCI6InN0dWRlbnQxQGF0dGVuZGFuY2UuY29tIiwicm9sZSI6IlNUVURFTlQiLCJqdGkiOiIyYzdiOThlZS0xMmJiLTQ4YTEtOGUzZS0zMzY2OTQzNTI3MjEiLCJpYXQiOjE3NTYzNTYwMTIsImV4cCI6MTc1NjM1NjkxMn0.0-lW0R-Wf9OAiBQqr4WxGkufQ3OFdX6a8bwtNmQrrE0
+
+### ==========================================
+### HEALTH CHECK
+### ==========================================
+
+### Health Check - Attendance Service
+GET http://localhost:3002/health
+
+### ==========================================
+### COURSE ENDPOINTS
+### ==========================================
+
+### Create Course (Instructor only)
+POST http://localhost:3002/api/v1/courses
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Test Course via API",
+  "description": "Testing course creation through API",
+  "startDate": "2025-09-01",
+  "endDate": "2025-12-31",
+  "settings": {
+    "gpsRadius": 100,
+    "allowLateEntry": true,
+    "lateEntryMinutes": 20,
+    "requireSelfie": false,
+    "autoEndSession": true,
+    "autoEndMinutes": 120
+  }
+}
+
+### Get All Courses (User's enrolled courses)
+GET http://localhost:3002/api/v1/courses
+Authorization: Bearer {{authToken}}
+
+### Get Course by ID (replace with actual course ID from seeded data)
+GET http://localhost:3002/api/v1/courses/2d478290-4f37-4e39-a332-526b9283ee4b
+Authorization: Bearer {{authToken}}
+
+### Join Course with Code (Student) - Use code from seeded courses
+POST http://localhost:3002/api/v1/courses/enroll
+Authorization: Bearer {{studentToken}}
+Content-Type: application/json
+
+{
+  "code": "CS1011AJC"
+}
+
+### Leave Course (Student)
+POST http://localhost:3002/api/v1/courses/2d478290-4f37-4e39-a332-526b9283ee4b/leave
+Authorization: Bearer {{studentToken}}
+
+### Update Course (Instructor/Owner only)
+PUT http://localhost:3002/api/v1/courses/2d478290-4f37-4e39-a332-526b9283ee4b
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Updated Course Name",
+  "description": "Updated description"
+}
+
+### ==========================================
+### SESSION ENDPOINTS
+### ==========================================
+
+### Create Session (Instructor)
+POST http://localhost:3002/api/v1/sessions
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "courseId": "2d478290-4f37-4e39-a332-526b9283ee4b",
+  "name": "Test Session API",
+  "description": "Testing session creation",
+  "startTime": "2025-08-27T14:00:00Z",
+  "endTime": "2025-08-27T16:00:00Z",
+  "latitude": 37.7749,
+  "longitude": -122.4194,
+  "radiusMeters": 75,
+  "locationName": "Test Location",
+  "allowLateEntry": true,
+  "lateMinutes": 15,
+  "requireSelfie": false
+}
+
+### Get Active Sessions
+GET http://localhost:3002/api/v1/sessions/active
+Authorization: Bearer {{authToken}}
+
+### Get Session by ID
+GET http://localhost:3002/api/v1/sessions/1a9b4ccb-0fb7-4b1c-a70c-8c68f6e1ff52
+Authorization: Bearer {{authToken}}
+
+### Start Session (Instructor)
+POST http://localhost:3002/api/v1/sessions/1a9b4ccb-0fb7-4b1c-a70c-8c68f6e1ff52/start
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "actualLatitude": 37.7749,
+  "actualLongitude": -122.4194
+}
+
+### End Session (Instructor)
+POST http://localhost:3002/api/v1/sessions/1a9b4ccb-0fb7-4b1c-a70c-8c68f6e1ff52/end
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "notes": "Session completed successfully"
+}
+
+### ==========================================
+### ATTENDANCE ENDPOINTS
+### ==========================================
+
+### Mark Attendance (Student) - Session must be active, must be within GPS radius
+POST http://localhost:3002/api/v1/attendance
+Authorization: Bearer {{studentToken}}
+Content-Type: application/json
+
+{
+  "sessionId": "1a9b4ccb-0fb7-4b1c-a70c-8c68f6e1ff52",
+  "latitude": 37.7749,
+  "longitude": -122.4194,
+  "deviceInfo": {
+    "platform": "web",
+    "model": "Chrome",
+    "osVersion": "Windows 11",
+    "appVersion": "1.0.0"
+  }
+}
+
+### Test Outside GPS Radius (Should Fail)
+POST http://localhost:3002/api/v1/attendance
+Authorization: Bearer {{studentToken}}
+Content-Type: application/json
+
+{
+  "sessionId": "1a9b4ccb-0fb7-4b1c-a70c-8c68f6e1ff52",
+  "latitude": 37.8000,
+  "longitude": -122.4500,
+  "deviceInfo": {
+    "platform": "web",
+    "model": "Chrome",
+    "osVersion": "Windows 11",
+    "appVersion": "1.0.0"
+  }
+}
+
+### Get Session Attendance (Instructor view)
+GET http://localhost:3002/api/v1/attendance/session/1a9b4ccb-0fb7-4b1c-a70c-8c68f6e1ff52
+Authorization: Bearer {{authToken}}
+
+### Get User Attendance History within enrolled course
+GET http://localhost:3002/api/v1/attendance/course/2d478290-4f37-4e39-a332-526b9283ee4b/user/d68c9d80-4c4e-4fb1-aee1-46416dc4213c
+Authorization: Bearer {{studentToken}}
+

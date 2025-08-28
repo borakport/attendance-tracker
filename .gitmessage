@@ -1,0 +1,14 @@
+# <type>: <subject> (max 50 chars)
+
+# <body> (optional, wrap at 72 chars)
+
+# <footer> (optional)
+
+# Type can be:
+#   feat     (new feature)
+#   fix      (bug fix)
+#   docs     (changes to documentation)
+#   style    (formatting, no code change)
+#   refactor (refactoring code)
+#   test     (adding tests)
+#   chore    (maintain)

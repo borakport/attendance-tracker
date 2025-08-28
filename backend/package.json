@@ -1,0 +1,33 @@
+{
+  "name": "gps-attendance-backend",
+  "version": "1.0.0",
+  "description": "Backend services for GPS Attendance Tracker",
+  "private": true,
+  "scripts": {
+    "install:all": "npm run install:auth && npm run install:attendance && npm run install:realtime",
+    "install:auth": "cd services/auth-service && npm install",
+    "install:attendance": "cd services/attendance-service && npm install",
+    "install:realtime": "cd services/realtime-service && npm install",
+    "dev:auth": "cd services/auth-service && npm run dev",
+    "dev:attendance": "cd services/attendance-service && npm run dev",
+    "dev:realtime": "cd services/realtime-service && npm run dev",
+    "build:all": "npm run build:auth && npm run build:attendance && npm run build:realtime",
+    "build:auth": "cd services/auth-service && npm run build",
+    "build:attendance": "cd services/attendance-service && npm run build",
+    "build:realtime": "cd services/realtime-service && npm run build",
+    "test:connection": "cd services/attendance-service && npm run test:realtime",
+    "seed": "cd services/auth-service && npm run seed",
+    "migrate": "cd services/auth-service && npx prisma migrate dev",
+    "studio": "cd services/auth-service && npx prisma studio"
+  },
+  "keywords": [
+    "gps",
+    "attendance",
+    "tracking",
+    "microservices",
+    "nodejs",
+    "typescript"
+  ],
+  "author": "borakport",
+  "license": "MIT"
+}

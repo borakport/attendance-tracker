@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Realtime Service - Client Connection Test</title>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        .log { background-color: #f8f9fa; padding: 10px; margin: 10px 0; border-radius: 3px; font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto; }
+        input, button { margin: 5px; padding: 8px; }
+        button { background-color: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #6c757d; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Realtime Service - Client Connection Test</h1>
+        
+        <div class="section info">
+            <h3>ℹ️ Testing Client Namespace (JWT Authentication)</h3>
+            <p>This tests the <strong>/</strong> (client) namespace that requires JWT authentication for web/mobile apps.</p>
+        </div>
+
+        <div class="section">
+            <h3>🔑 Authentication</h3>
+            <input type="text" id="jwtToken" placeholder="Enter JWT token from auth service" style="width: 500px;">
+            <button onclick="connect()">Connect</button>
+            <button onclick="disconnect()" disabled id="disconnectBtn">Disconnect</button>
+        </div>
+
+        <div class="section">
+            <h3>📊 Connection Status</h3>
+            <div id="connectionStatus" class="log">Not connected</div>
+        </div>
+
+        <div class="section">
+            <h3>🎯 Test Actions</h3>
+            <button onclick="joinUserRoom()" disabled id="joinRoomBtn">Join User Room</button>
+            <button onclick="joinCourseRoom()" disabled id="joinCourseBtn">Join Course Room</button>
+            <input type="text" id="courseId" placeholder="Course ID" style="width: 200px;">
+        </div>
+
+        <div class="section">
+            <h3>📡 Event Log</h3>
+            <button onclick="clearLog()">Clear Log</button>
+            <div id="eventLog" class="log">Waiting for events...</div>
+        </div>
+
+        <div class="section">
+            <h3>🧪 How to Test</h3>
+            <ol>
+                <li>First, get a JWT token from auth service:</li>
+                <pre>POST http://localhost:3001/api/v1/auth/signin
+Content-Type: application/json
+
+{
+  "email": "student1@attendance.com",
+  "password": "Student@123"
+}</pre>
+                <li>Copy the <code>accessToken</code> from response</li>
+                <li>Paste it in the JWT token field above</li>
+                <li>Click "Connect" to test client authentication</li>
+                <li>Use attendance service API to trigger events and watch them here</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        let socket = null;
+        let userId = null;
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('eventLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const colorMap = {
+                'success': '#28a745',
+                'error': '#dc3545',
+                'warning': '#ffc107',
+                'info': '#17a2b8'
+            };
+            logDiv.innerHTML += `<div style="color: ${colorMap[type] || '#000'};">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('connectionStatus');
+            statusDiv.innerHTML = message;
+            statusDiv.className = `log ${type}`;
+        }
+
+        function connect() {
+            const token = document.getElementById('jwtToken').value.trim();
+            if (!token) {
+                alert('Please enter a JWT token');
+                return;
+            }
+
+            // Decode JWT to get user info (basic decode, no verification)
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                userId = payload.userId;
+                log(`Decoded token for user: ${payload.email} (${payload.role})`, 'info');
+            } catch (e) {
+                log('Could not decode JWT token', 'warning');
+            }
+
+            socket = io('http://localhost:3003/', {
+                auth: {
+                    token: token
+                },
+                reconnection: true,
+                reconnectionAttempts: 5,
+                reconnectionDelay: 1000
+            });
+
+            socket.on('connect', () => {
+                log('✅ Connected to realtime service (client namespace)', 'success');
+                updateStatus('✅ Connected to client namespace', 'success');
+                document.getElementById('disconnectBtn').disabled = false;
+                document.getElementById('joinRoomBtn').disabled = false;
+                document.getElementById('joinCourseBtn').disabled = false;
+            });
+
+            socket.on('disconnect', (reason) => {
+                log(`❌ Disconnected: ${reason}`, 'error');
+                updateStatus('❌ Disconnected', 'error');
+                document.getElementById('disconnectBtn').disabled = true;
+                document.getElementById('joinRoomBtn').disabled = true;
+                document.getElementById('joinCourseBtn').disabled = true;
+            });
+
+            socket.on('connect_error', (error) => {
+                log(`❌ Connection error: ${error.message}`, 'error');
+                updateStatus(`❌ Connection failed: ${error.message}`, 'error');
+            });
+
+            // Listen for course events
+            socket.on('course:created', (data) => {
+                log(`📚 Course created: ${JSON.stringify(data)}`, 'success');
+            });
+
+            socket.on('course:joined', (data) => {
+                log(`📚 Course joined: ${JSON.stringify(data)}`, 'success');
+            });
+
+            socket.on('member:joined', (data) => {
+                log(`👥 Member joined: ${JSON.stringify(data)}`, 'info');
+            });
+
+            // Listen for session events
+            socket.on('session:created', (data) => {
+                log(`📅 Session created: ${JSON.stringify(data)}`, 'success');
+            });
+
+            socket.on('session:started', (data) => {
+                log(`🔴 Session started: ${JSON.stringify(data)}`, 'warning');
+            });
+
+            socket.on('session:active', (data) => {
+                log(`🟢 Session active: ${JSON.stringify(data)}`, 'success');
+            });
+
+            socket.on('session:ended', (data) => {
+                log(`🏁 Session ended: ${JSON.stringify(data)}`, 'info');
+            });
+
+            // Listen for attendance events
+            socket.on('attendance:marked', (data) => {
+                log(`✅ Attendance marked: ${JSON.stringify(data)}`, 'success');
+            });
+
+            socket.on('attendance:confirmed', (data) => {
+                log(`✅ Attendance confirmed: ${JSON.stringify(data)}`, 'success');
+            });
+        }
+
+        function disconnect() {
+            if (socket) {
+                socket.disconnect();
+                socket = null;
+                updateStatus('Disconnected', 'error');
+                log('Disconnected by user', 'info');
+            }
+        }
+
+        function joinUserRoom() {
+            if (socket && userId) {
+                log(`Joining user room: user:${userId}`, 'info');
+                // User rooms are joined automatically by the server
+            } else {
+                log('No user ID available or not connected', 'warning');
+            }
+        }
+
+        function joinCourseRoom() {
+            const courseId = document.getElementById('courseId').value.trim();
+            if (!courseId) {
+                alert('Please enter a course ID');
+                return;
+            }
+            if (socket) {
+                socket.emit('join:course', { courseId });
+                log(`Attempting to join course room: course:${courseId}`, 'info');
+            }
+        }
+
+        function clearLog() {
+            document.getElementById('eventLog').innerHTML = 'Log cleared...';
+        }
+
+        // Auto-populate with example token if available
+        window.addEventListener('load', () => {
+            log('🚀 Realtime service client test loaded', 'info');
+            log('Enter a JWT token and click Connect to start testing', 'info');
+        });
+    </script>
+</body>
+</html>
