@@ -310,9 +310,12 @@ export default function RegisterScreen({ navigation }: any) {
                   />
                   <Text style={styles.termsText}>
                     I agree to the{' '}
-                    <Text style={styles.termsLink}>Terms of Service</Text>
-                    {' '}and{' '}
-                    <Text style={styles.termsLink}>Privacy Policy</Text>
+                    <Text 
+                      style={styles.termsLink}
+                      onPress={() => navigation.navigate('TermsAndPrivacy')}
+                    >
+                      Terms of Service and Privacy Policy
+                    </Text>
                   </Text>
                 </View>
 

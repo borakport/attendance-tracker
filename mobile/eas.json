@@ -61,6 +61,21 @@
         "EXPO_PUBLIC_REALTIME_URL": "wss://realtime.gpsattendance.com"
       },
       "channel": "production"
+    },
+    "production-apk": {
+      "extends": "base",
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease"
+      },
+      "env": {
+        "EXPO_PUBLIC_ENV": "production",
+        "EXPO_PUBLIC_API_URL": "http://your-server-ip:3001/api/v1",
+        "EXPO_PUBLIC_ATTENDANCE_API_URL": "http://your-server-ip:3002/api/v1",
+        "EXPO_PUBLIC_REALTIME_URL": "http://your-server-ip:3003"
+      },
+      "channel": "production"
     }
   },
   "submit": {

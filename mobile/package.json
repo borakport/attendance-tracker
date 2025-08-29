@@ -14,6 +14,7 @@
     "prebuild": "expo prebuild --clean",
     "build:dev": "eas build --platform android --profile development",
     "build:preview": "eas build --platform android --profile preview",
+    "build:production": "eas build --platform android --profile production-apk",
     "build:ios-dev": "eas build --platform ios --profile development",
     "eas:login": "eas login",
     "eas:configure": "eas build:configure"

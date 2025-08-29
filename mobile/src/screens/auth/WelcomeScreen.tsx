@@ -81,16 +81,9 @@ export default function WelcomeScreen({ navigation }: any) {
               By continuing, you agree to our{' '}
               <Text 
                 style={styles.link} 
-                onPress={() => navigation.navigate('Terms')}
+                onPress={() => navigation.navigate('TermsAndPrivacy')}
               >
-                Terms of Service
-              </Text>
-              {' '}and{' '}
-              <Text 
-                style={styles.link}
-                onPress={() => navigation.navigate('Privacy')}
-              >
-                Privacy Policy
+                Terms of Service and Privacy Policy
               </Text>
             </Text>
           </View>

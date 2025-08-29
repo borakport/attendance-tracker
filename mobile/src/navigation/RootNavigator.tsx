@@ -6,8 +6,7 @@ import WelcomeScreen from '@/screens/auth/WelcomeScreen';
 import AuthNavigator from './AuthNavigator';
 import MainNavigator from './MainNavigator';
 import LoadingScreen from '@/screens/LoadingScreen';
-import TermsScreen from '@/screens/legal/TermsScreen';
-import PrivacyScreen from '@/screens/legal/PrivacyScreen';
+import TermsAndPrivacyScreen from '@/screens/legal/TermsAndPrivacyScreen';
 import socketService from '@/services/socket.service';
 import apiService from '@/services/api.service';
 
@@ -84,25 +83,12 @@ export default function RootNavigator() {
         </>
       )}
       
-      {/* Legal screens available globally */}
+      {/* Legal screen available globally */}
       <Stack.Screen 
-        name="Terms" 
-        component={TermsScreen}
+        name="TermsAndPrivacy" 
+        component={TermsAndPrivacyScreen}
         options={{ 
-          headerShown: true,
-          title: 'Terms of Service',
-          headerStyle: { backgroundColor: '#667eea' },
-          headerTintColor: 'white',
-        }}
-      />
-      <Stack.Screen 
-        name="Privacy" 
-        component={PrivacyScreen}
-        options={{ 
-          headerShown: true,
-          title: 'Privacy Policy',
-          headerStyle: { backgroundColor: '#667eea' },
-          headerTintColor: 'white',
+          headerShown: false, // We're handling the header in the screen itself
         }}
       />
     </Stack.Navigator>
