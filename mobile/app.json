@@ -61,12 +61,7 @@
         "android.permission.USE_FINGERPRINT",
         "android.permission.USE_BIOMETRIC",
         "android.permission.RECORD_AUDIO"
-      ],
-      "config": {
-        "googleMaps": {
-          "apiKey": ""
-        }
-      }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"

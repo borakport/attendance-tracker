@@ -23,9 +23,22 @@ export const fetchCourses = createAsyncThunk(
   'course/fetchCourses',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await apiService.getCourses();
-      return response.data;
+      console.log('Fetching user courses...');
+      const response = await apiService.getMyCourses();
+      console.log('Raw courses response:', response.data);
+      
+      // Transform courses to include role at root level
+      const transformedCourses = response.data?.map((course: any) => ({
+        ...course,
+        role: course.members?.[0]?.role || 'PARTICIPANT',
+        memberCount: course._count?.members || 0,
+        sessionCount: course._count?.sessions || 0,
+      })) || [];
+      
+      console.log('Transformed courses:', transformedCourses);
+      return transformedCourses;
     } catch (error) {
+      console.error('Error fetching courses:', error);
       return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch courses');
     }
   }

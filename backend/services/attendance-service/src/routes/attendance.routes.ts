@@ -6,6 +6,8 @@ import { markAttendanceSchema } from '../validators/attendance.validator';
 const router = Router();
 
 router.post('/', validate(markAttendanceSchema), AttendanceController.mark);
+router.post('/mark', validate(markAttendanceSchema), AttendanceController.mark);
+router.get('/my', AttendanceController.getMyAttendance);
 router.get('/session/:sessionId', AttendanceController.getSessionAttendance);
 router.get('/course/:courseId/user/:userId', AttendanceController.getUserAttendance);
 

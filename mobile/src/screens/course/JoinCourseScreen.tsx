@@ -18,9 +18,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import Toast from 'react-native-toast-message';
 import { useAppDispatch, useAppSelector } from '@/hooks/redux';
-import { joinCourse } from '@/store/slices/courseSlice';
+import { joinCourse, fetchCourses } from '@/store/slices/courseSlice';
+import apiService from '@/services/api.service';
+import Toast from 'react-native-toast-message';
 
 export default function JoinCourseScreen({ navigation }: any) {
   const dispatch = useAppDispatch();
@@ -56,20 +57,30 @@ export default function JoinCourseScreen({ navigation }: any) {
     }
 
     try {
-      const result = await dispatch(joinCourse(courseCode)).unwrap();
+      console.log('Attempting to join course with code:', courseCode);
+      const result = await apiService.enrollInCourse(courseCode);
+      console.log('Successfully joined course:', result.data);
+      
+      // Refresh courses list to show the newly joined course
+      console.log('Refreshing courses list...');
+      await dispatch(fetchCourses()).unwrap();
+      console.log('Courses list refreshed');
       
       Toast.show({
         type: 'success',
         text1: 'Success!',
-        text2: `Joined ${result?.name || 'course'}`,
+        text2: `Joined ${result.data?.name || 'course'}`,
       });
       
-      navigation.goBack();
+      // Navigate back and trigger a refresh on the courses screen
+      navigation.navigate('CourseList');
+      
     } catch (error: any) {
+      console.error('Error joining course:', error);
       Toast.show({
         type: 'error',
         text1: 'Failed to join course',
-        text2: error.message || 'Invalid course code',
+        text2: error.response?.data?.message || 'Invalid course code',
       });
     }
   };

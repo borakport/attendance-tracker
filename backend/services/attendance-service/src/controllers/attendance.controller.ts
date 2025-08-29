@@ -150,6 +150,44 @@ export class AttendanceController {
     }
   }
 
+  static async getMyAttendance(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userId = req.user!.userId;
+
+      const attendance = await prisma.attendance.findMany({
+        where: { userId },
+        include: {
+          session: {
+            select: {
+              id: true,
+              name: true,
+              startTime: true,
+              endTime: true,
+              course: {
+                select: {
+                  id: true,
+                  name: true,
+                  code: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+
+      res.status(200).json({
+        success: true,
+        message: 'Your attendance records retrieved successfully',
+        data: attendance,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async getSessionAttendance(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const { sessionId } = req.params;

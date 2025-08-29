@@ -220,9 +220,9 @@ export class CourseController {
       const { courseCode, code } = req.body;
       const userId = req.user!.userId;
 
-        const lookupCode = courseCode || code; // support either payload key
-        const course = await prisma.course.findUnique({
-          where: { code: lookupCode },
+      const lookupCode = courseCode || code; // support either payload key
+      const course = await prisma.course.findUnique({
+        where: { code: lookupCode },
       });
 
       if (!course) {
@@ -247,7 +247,7 @@ export class CourseController {
         return;
       }
 
-      const member = await prisma.courseMember.create({
+      await prisma.courseMember.create({
         data: {
           courseId: course.id,
           userId,
@@ -255,10 +255,11 @@ export class CourseController {
         },
       });
 
+      // Return the course data instead of the member data
       res.status(201).json({
         success: true,
         message: 'Enrolled in course successfully',
-        data: member,
+        data: course,
       });
     } catch (error) {
       next(error);

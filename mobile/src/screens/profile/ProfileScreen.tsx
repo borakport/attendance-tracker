@@ -4,6 +4,8 @@ import {
   StyleSheet,
   ScrollView,
   RefreshControl,
+  Alert,
+  TouchableOpacity,
 } from 'react-native';
 import {
   Text,
@@ -16,6 +18,7 @@ import {
   Chip,
   ProgressBar,
   Divider,
+  IconButton,
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -33,6 +36,14 @@ export default function ProfileScreen({ navigation }: any) {
   const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState<any>(null);
   const [loadingStats, setLoadingStats] = useState(true);
+  
+  // Collapsible sections state
+  const [expandedSections, setExpandedSections] = useState({
+    attendance: true,
+    teaching: true,
+    settings: false,
+    support: false,
+  });
 
   useEffect(() => {
     loadStats();
@@ -40,19 +51,131 @@ export default function ProfileScreen({ navigation }: any) {
 
   const loadStats = async () => {
     try {
-      // Mock stats for now - replace with actual API call when available
-      const mockStats = {
-        totalSessions: 24,
-        attendedSessions: 20,
-        courseStats: [
-          { courseId: '1', courseName: 'Computer Science 101', attended: 8, total: 10 },
-          { courseId: '2', courseName: 'Mathematics', attended: 7, total: 8 },
-          { courseId: '3', courseName: 'Physics', attended: 5, total: 6 },
-        ]
-      };
-      setStats(mockStats);
+      setLoadingStats(true);
+      
+      if (user?.role === UserRole.STUDENT) {
+        // Student statistics
+        const [coursesResponse, attendanceResponse] = await Promise.all([
+          apiService.getCourses(),
+          apiService.getMyAttendance()
+        ]);
+
+        const courses = coursesResponse.data || [];
+        const attendance = attendanceResponse.data || [];
+
+        // Calculate course-specific stats
+        const courseStats = await Promise.all(
+          courses.map(async (course) => {
+            try {
+              const sessionsResponse = await apiService.getCourseSessions(course.id);
+              const sessions = sessionsResponse.data || [];
+              const courseAttendance = attendance.filter(a => 
+                sessions.some(s => s.id === a.sessionId)
+              );
+              
+              return {
+                courseId: course.id,
+                courseName: course.name,
+                attended: courseAttendance.length,
+                total: sessions.length
+              };
+            } catch (error) {
+              console.error(`Error loading sessions for course ${course.id}:`, error);
+              return {
+                courseId: course.id,
+                courseName: course.name,
+                attended: 0,
+                total: 0
+              };
+            }
+          })
+        );
+
+        // Calculate overall stats
+        const totalSessions = courseStats.reduce((sum, course) => sum + course.total, 0);
+        const attendedSessions = courseStats.reduce((sum, course) => sum + course.attended, 0);
+
+        setStats({
+          totalSessions,
+          attendedSessions,
+          courseStats: courseStats.filter(course => course.total > 0) // Only show courses with sessions
+        });
+
+      } else if (user?.role === UserRole.INSTRUCTOR) {
+        // Instructor statistics
+        const [coursesResponse, activeSessionsResponse] = await Promise.all([
+          apiService.getCourses(),
+          apiService.getActiveSessions()
+        ]);
+
+        const courses = coursesResponse.data || [];
+        const activeSessions = activeSessionsResponse.data || [];
+
+        // Calculate total students across all courses
+        let totalStudents = 0;
+        let thisWeekSessions = 0;
+        
+        const coursePromises = courses.map(async (course) => {
+          try {
+            const [membersResponse, sessionsResponse] = await Promise.all([
+              apiService.getCourseMembers(course.id),
+              apiService.getCourseSessions(course.id)
+            ]);
+            
+            const members = membersResponse.data || [];
+            const sessions = sessionsResponse.data || [];
+            
+            // Count students (exclude instructors)
+            const students = members.filter(member => 
+              member.role.toLowerCase() === 'student'
+            );
+            
+            // Count sessions this week
+            const now = new Date();
+            const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(startOfWeek.getDate() + 6);
+            
+            const weekSessions = sessions.filter(session => {
+              const sessionDate = new Date(session.startTime);
+              return sessionDate >= startOfWeek && sessionDate <= endOfWeek;
+            });
+            
+            return {
+              students: students.length,
+              weekSessions: weekSessions.length
+            };
+          } catch (error) {
+            console.error(`Error loading data for course ${course.id}:`, error);
+            return { students: 0, weekSessions: 0 };
+          }
+        });
+
+        const courseData = await Promise.all(coursePromises);
+        totalStudents = courseData.reduce((sum, data) => sum + data.students, 0);
+        thisWeekSessions = courseData.reduce((sum, data) => sum + data.weekSessions, 0);
+
+        setStats({
+          activeCourses: courses.length,
+          totalStudents,
+          thisWeekSessions,
+          courses
+        });
+      }
     } catch (error) {
       console.error('Error loading stats:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to load statistics',
+      });
+      
+      // Set fallback empty stats
+      setStats({
+        totalSessions: 0,
+        attendedSessions: 0,
+        courseStats: []
+      });
     } finally {
       setLoadingStats(false);
     }
@@ -64,8 +187,36 @@ export default function ProfileScreen({ navigation }: any) {
     setRefreshing(false);
   };
 
-  const handleSignOut = async () => {
-    await dispatch(signOut());
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  };
+
+  const handleSignOut = () => {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: async () => {
+            await dispatch(signOut());
+            Toast.show({
+              type: 'info',
+              text1: 'Signed Out',
+              text2: 'You have been signed out successfully',
+            });
+          },
+        },
+      ],
+    );
   };
 
   const getInitials = () => {
@@ -108,95 +259,151 @@ export default function ProfileScreen({ navigation }: any) {
           </View>
         </LinearGradient>
 
-        {user?.role === UserRole.STUDENT && stats && (
-          <Card style={styles.statsCard}>
-            <Card.Title
-              title="Attendance Overview"
-              subtitle="Current semester"
-              left={(props) => <Avatar.Icon {...props} icon="chart-arc" />}
-            />
-            <Card.Content>
-              <View style={styles.statRow}>
-                <View style={styles.statItem}>
-                  <Text style={styles.statValue}>{stats.totalSessions || 0}</Text>
-                  <Text style={styles.statLabel}>Total Sessions</Text>
-                </View>
-                <View style={styles.statItem}>
-                  <Text style={styles.statValue}>{stats.attendedSessions || 0}</Text>
-                  <Text style={styles.statLabel}>Attended</Text>
-                </View>
-                <View style={styles.statItem}>
-                  <Text style={styles.statValue}>{getAttendanceRate()}%</Text>
-                  <Text style={styles.statLabel}>Rate</Text>
-                </View>
-              </View>
-              
-              <View style={styles.progressContainer}>
-                <Text style={styles.progressLabel}>Overall Attendance</Text>
-                <ProgressBar
-                  progress={getAttendanceRate() / 100}
-                  color={getAttendanceRate() >= 75 ? '#4CAF50' : '#FF9800'}
-                  style={styles.progressBar}
-                />
-                <Text style={styles.progressText}>
-                  {getAttendanceRate() >= 75 ? 'Good Standing' : 'Needs Improvement'}
-                </Text>
-              </View>
-
-              {stats.courseStats && stats.courseStats.length > 0 && (
-                <View style={styles.courseStatsContainer}>
-                  <Text style={styles.sectionTitle}>By Course</Text>
-                  {stats.courseStats.map((course: any) => (
-                    <Surface key={course.courseId} style={styles.courseStat}>
-                      <Text style={styles.courseName}>{course.courseName}</Text>
-                      <View style={styles.courseStatInfo}>
-                        <Text style={styles.courseStatText}>
-                          {course.attended}/{course.total} sessions
-                        </Text>
-                        <Chip compact>{Math.round((course.attended / course.total) * 100)}%</Chip>
+        {user?.role === UserRole.STUDENT && (
+          <Card style={styles.card}>
+            <TouchableOpacity onPress={() => toggleSection('attendance')}>
+              <Card.Title
+                title="Attendance Overview"
+                subtitle="Current semester"
+                left={(props) => <Avatar.Icon {...props} icon="chart-arc" />}
+                right={() => (
+                  <IconButton 
+                    icon={expandedSections.attendance ? 'chevron-up' : 'chevron-down'}
+                    size={24}
+                  />
+                )}
+              />
+            </TouchableOpacity>
+            
+            {expandedSections.attendance && (
+              <Card.Content>
+                {loadingStats ? (
+                  <View style={styles.loadingContainer}>
+                    <Text>Loading attendance statistics...</Text>
+                  </View>
+                ) : stats ? (
+                  <>
+                    <View style={styles.statRow}>
+                      <View style={styles.statItem}>
+                        <Text style={styles.statValue}>{stats.totalSessions || 0}</Text>
+                        <Text style={styles.statLabel}>Total Sessions</Text>
                       </View>
-                    </Surface>
-                  ))}
-                </View>
-              )}
-            </Card.Content>
+                      <View style={styles.statItem}>
+                        <Text style={styles.statValue}>{stats.attendedSessions || 0}</Text>
+                        <Text style={styles.statLabel}>Attended</Text>
+                      </View>
+                      <View style={styles.statItem}>
+                        <Text style={styles.statValue}>{getAttendanceRate()}%</Text>
+                        <Text style={styles.statLabel}>Rate</Text>
+                      </View>
+                    </View>
+                    
+                    <View style={styles.progressContainer}>
+                      <Text style={styles.progressLabel}>Overall Attendance</Text>
+                      <ProgressBar
+                        progress={getAttendanceRate() / 100}
+                        color={getAttendanceRate() >= 75 ? '#4CAF50' : '#FF9800'}
+                        style={styles.progressBar}
+                      />
+                      <Text style={styles.progressText}>
+                        {getAttendanceRate() >= 75 ? 'Good Standing' : 'Needs Improvement'}
+                      </Text>
+                    </View>
+
+                    {stats.courseStats && stats.courseStats.length > 0 && (
+                      <View style={styles.courseStatsContainer}>
+                        <Text style={styles.sectionTitle}>By Course</Text>
+                        {stats.courseStats.map((course: any) => (
+                          <Surface key={course.courseId} style={styles.courseStat}>
+                            <Text style={styles.courseName}>{course.courseName}</Text>
+                            <View style={styles.courseStatInfo}>
+                              <Text style={styles.courseStatText}>
+                                {course.attended}/{course.total} sessions
+                              </Text>
+                              <Chip compact>{Math.round((course.attended / course.total) * 100)}%</Chip>
+                            </View>
+                          </Surface>
+                        ))}
+                      </View>
+                    )}
+                  </>
+                ) : (
+                  <View style={styles.loadingContainer}>
+                    <Text>No attendance data available</Text>
+                  </View>
+                )}
+              </Card.Content>
+            )}
           </Card>
         )}
 
         {user?.role === UserRole.INSTRUCTOR && (
-          <Card style={styles.statsCard}>
-            <Card.Title
-              title="Teaching Overview"
-              left={(props) => <Avatar.Icon {...props} icon="school" />}
-            />
-            <Card.Content>
-              <List.Item
-                title="Active Courses"
-                description="Currently teaching"
-                right={() => <Text style={styles.statValue}>3</Text>}
+          <Card style={styles.card}>
+            <TouchableOpacity onPress={() => toggleSection('teaching')}>
+              <Card.Title
+                title="Teaching Overview"
+                left={(props) => <Avatar.Icon {...props} icon="school" />}
+                right={() => (
+                  <IconButton 
+                    icon={expandedSections.teaching ? 'chevron-up' : 'chevron-down'}
+                    size={24}
+                  />
+                )}
               />
-              <Divider />
-              <List.Item
-                title="Total Students"
-                description="Across all courses"
-                right={() => <Text style={styles.statValue}>87</Text>}
-              />
-              <Divider />
-              <List.Item
-                title="Sessions This Week"
-                description="Scheduled"
-                right={() => <Text style={styles.statValue}>12</Text>}
-              />
-            </Card.Content>
+            </TouchableOpacity>
+            
+            {expandedSections.teaching && (
+              <Card.Content>
+                {loadingStats ? (
+                  <View style={styles.loadingContainer}>
+                    <Text>Loading teaching statistics...</Text>
+                  </View>
+                ) : stats ? (
+                  <>
+                    <List.Item
+                      title="Active Courses"
+                      description="Currently teaching"
+                      right={() => <Text style={styles.statValue}>{stats?.activeCourses || 0}</Text>}
+                    />
+                    <Divider />
+                    <List.Item
+                      title="Total Students"
+                      description="Across all courses"
+                      right={() => <Text style={styles.statValue}>{stats?.totalStudents || 0}</Text>}
+                    />
+                    <Divider />
+                    <List.Item
+                      title="Sessions This Week"
+                      description="Scheduled"
+                      right={() => <Text style={styles.statValue}>{stats?.thisWeekSessions || 0}</Text>}
+                    />
+                  </>
+                ) : (
+                  <View style={styles.loadingContainer}>
+                    <Text>No teaching data available</Text>
+                  </View>
+                )}
+              </Card.Content>
+            )}
           </Card>
         )}
 
         <Card style={styles.card}>
-          <Card.Title
-            title="Account Settings"
-            left={(props) => <Avatar.Icon {...props} icon="account-cog" />}
-          />
-          <Card.Content>
+          <TouchableOpacity onPress={() => toggleSection('settings')}>
+            <Card.Title
+              title="Account Settings"
+              left={(props) => <Avatar.Icon {...props} icon="account-cog" />}
+              right={() => (
+                <IconButton 
+                  icon={expandedSections.settings ? 'chevron-up' : 'chevron-down'}
+                  size={24}
+                />
+              )}
+            />
+          </TouchableOpacity>
+          
+          {expandedSections.settings && (
+            <Card.Content>
             <List.Item
               title="Edit Profile"
               description="Update your information"
@@ -221,14 +428,25 @@ export default function ProfileScreen({ navigation }: any) {
               onPress={() => Toast.show({ type: 'info', text1: 'Coming Soon' })}
             />
           </Card.Content>
+          )}
         </Card>
 
         <Card style={styles.card}>
-          <Card.Title
-            title="Support"
-            left={(props) => <Avatar.Icon {...props} icon="help-circle" />}
-          />
-          <Card.Content>
+          <TouchableOpacity onPress={() => toggleSection('support')}>
+            <Card.Title
+              title="Support"
+              left={(props) => <Avatar.Icon {...props} icon="help-circle" />}
+              right={() => (
+                <IconButton 
+                  icon={expandedSections.support ? 'chevron-up' : 'chevron-down'}
+                  size={24}
+                />
+              )}
+            />
+          </TouchableOpacity>
+          
+          {expandedSections.support && (
+            <Card.Content>
             <List.Item
               title="Help Center"
               left={props => <List.Icon {...props} icon="help-circle-outline" />}
@@ -247,6 +465,7 @@ export default function ProfileScreen({ navigation }: any) {
               left={props => <List.Icon {...props} icon="information-outline" />}
             />
           </Card.Content>
+          )}
         </Card>
 
         <View style={styles.signOutContainer}>
@@ -363,6 +582,11 @@ const styles = StyleSheet.create({
   courseStatText: {
     fontSize: 12,
     color: '#666',
+  },
+  loadingContainer: {
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   card: {
     margin: 16,

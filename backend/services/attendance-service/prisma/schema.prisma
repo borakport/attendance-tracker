@@ -135,7 +135,7 @@ model Session {
   longitude       Decimal     @db.Decimal(11, 8)
   radiusMeters    Int         @default(50)
   locationName    String?
-  isActive        Boolean     @default(false)
+  isActive        Boolean     @default(true)
   allowLateEntry  Boolean     @default(true)
   lateMinutes     Int         @default(15)
   requireSelfie   Boolean     @default(false)

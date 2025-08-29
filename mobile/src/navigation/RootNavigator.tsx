@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAppSelector, useAppDispatch } from '@/hooks/redux';
-import { loadStoredAuth } from '@/store/slices/authSlice';
+import { loadStoredAuth, refreshToken } from '@/store/slices/authSlice';
 import WelcomeScreen from '@/screens/auth/WelcomeScreen';
 import AuthNavigator from './AuthNavigator';
 import MainNavigator from './MainNavigator';
 import LoadingScreen from '@/screens/LoadingScreen';
+import TermsScreen from '@/screens/legal/TermsScreen';
+import PrivacyScreen from '@/screens/legal/PrivacyScreen';
 import socketService from '@/services/socket.service';
+import apiService from '@/services/api.service';
 
 const Stack = createNativeStackNavigator();
 
@@ -33,10 +36,32 @@ export default function RootNavigator() {
   const initializeApp = async () => {
     try {
       // Check for stored authentication
-      await dispatch(loadStoredAuth()).unwrap();
+      const authResult = await dispatch(loadStoredAuth()).unwrap();
+      
+      if (authResult && authResult.tokens) {
+        // We have stored tokens, try to refresh to ensure they're valid
+        try {
+          await dispatch(refreshToken()).unwrap();
+          console.log('🔄 Token refreshed successfully on app start');
+        } catch (refreshError) {
+          console.log('❌ Token refresh failed on app start:', refreshError);
+          // If refresh fails, user will need to login again
+        }
+      }
+      
       setIsFirstLaunch(false);
     } catch (error) {
       console.log('No stored auth');
+      // Try to check if we have tokens and attempt refresh
+      const hasTokens = await apiService.hasValidTokens();
+      if (hasTokens) {
+        try {
+          await dispatch(refreshToken()).unwrap();
+          console.log('🔄 Token refreshed from stored tokens');
+        } catch (refreshError) {
+          console.log('❌ Failed to refresh stored tokens:', refreshError);
+        }
+      }
     } finally {
       setIsLoading(false);
     }
@@ -58,6 +83,28 @@ export default function RootNavigator() {
           <Stack.Screen name="Auth" component={AuthNavigator} />
         </>
       )}
+      
+      {/* Legal screens available globally */}
+      <Stack.Screen 
+        name="Terms" 
+        component={TermsScreen}
+        options={{ 
+          headerShown: true,
+          title: 'Terms of Service',
+          headerStyle: { backgroundColor: '#667eea' },
+          headerTintColor: 'white',
+        }}
+      />
+      <Stack.Screen 
+        name="Privacy" 
+        component={PrivacyScreen}
+        options={{ 
+          headerShown: true,
+          title: 'Privacy Policy',
+          headerStyle: { backgroundColor: '#667eea' },
+          headerTintColor: 'white',
+        }}
+      />
     </Stack.Navigator>
   );
 }

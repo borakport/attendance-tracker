@@ -11,6 +11,9 @@ import { UserRole } from '@/types';
 import HomeScreen from '@/screens/main/HomeScreen';
 import CourseListScreen from '@/screens/course/CourseListScreen';
 import CourseDetailScreen from '@/screens/course/CourseDetailScreen';
+import SessionsListScreen from '@/screens/course/SessionsListScreen';
+import CourseMembersScreen from '@/screens/course/CourseMembersScreen';
+import SessionDetailScreen from '@/screens/session/SessionDetailScreen';
 import JoinCourseScreen from '@/screens/course/JoinCourseScreen';
 import CreateCourseScreen from '@/screens/course/CreateCourseScreen';
 import CreateSessionScreen from '@/screens/session/CreateSessionScreen';
@@ -36,6 +39,21 @@ function CourseStack() {
         name="CourseDetail" 
         component={CourseDetailScreen}
         options={{ title: 'Course Details' }}
+      />
+      <Stack.Screen 
+        name="SessionsList" 
+        component={SessionsListScreen}
+        options={{ title: 'Sessions' }}
+      />
+      <Stack.Screen 
+        name="CourseMembers" 
+        component={CourseMembersScreen}
+        options={{ title: 'Course Members' }}
+      />
+      <Stack.Screen 
+        name="SessionDetail" 
+        component={SessionDetailScreen}
+        options={{ title: 'Session Details' }}
       />
       <Stack.Screen 
         name="JoinCourse" 
@@ -80,6 +98,8 @@ function AttendanceStack() {
 
 export default function MainNavigator() {
   const theme = useTheme();
+  const { user } = useAppSelector((state) => state.auth);
+  const isStudent = user?.role === UserRole.STUDENT;
 
   return (
     <Tab.Navigator
@@ -118,17 +138,19 @@ export default function MainNavigator() {
           ),
         }}
       />
-      <Tab.Screen
-        name="Attendance"
-        component={AttendanceStack}
-        options={{
-          headerShown: false,
-          tabBarLabel: 'Attendance',
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="clipboard-check" color={color} size={size} />
-          ),
-        }}
-      />
+      {isStudent && (
+        <Tab.Screen
+          name="Attendance"
+          component={AttendanceStack}
+          options={{
+            headerShown: false,
+            tabBarLabel: 'Sessions',
+            tabBarIcon: ({ color, size }) => (
+              <MaterialCommunityIcons name="calendar-check" color={color} size={size} />
+            ),
+          }}
+        />
+      )}
       <Tab.Screen
         name="Profile"
         component={ProfileScreen}

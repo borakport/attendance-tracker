@@ -1,8 +1,16 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Config } from '@/constants/config';
-import { ApiResponse, Course, Session, Attendance, User } from '@/types';
+import { ApiResponse, Course, Session, Attendance, User, AuthTokens } from '@/types';
 import Toast from 'react-native-toast-message';
+import { NavigationContainerRef } from '@react-navigation/native';
+
+// Add navigation reference for token expiry handling
+let navigationRef: NavigationContainerRef<any> | null = null;
+
+export const setNavigationRef = (ref: NavigationContainerRef<any>) => {
+  navigationRef = ref;
+};
 
 class ApiService {
   private authApi: AxiosInstance;
@@ -69,19 +77,33 @@ class ApiService {
         this.isRefreshing = true;
 
         try {
-          const newToken = await this.refreshToken();
-          this.onRefreshSuccess(newToken);
-          originalRequest.headers.Authorization = `Bearer ${newToken}`;
-          return axios(originalRequest);
+          const refreshResponse = await this.refreshAuthToken();
+          if (refreshResponse.data) {
+            const newToken = refreshResponse.data.accessToken;
+            this.onRefreshSuccess(newToken);
+            originalRequest.headers.Authorization = `Bearer ${newToken}`;
+            return axios(originalRequest);
+          } else {
+            throw new Error('Failed to refresh token');
+          }
         } catch (refreshError) {
           this.onRefreshFailed();
           await this.clearAuth();
-          // Navigate to login screen
+          
+          // Navigate to login and show token expired message
           Toast.show({
             type: 'error',
             text1: 'Session Expired',
-            text2: 'Please login again',
+            text2: 'Token expired, please login again',
           });
+          
+          if (navigationRef && navigationRef.isReady()) {
+            navigationRef.reset({
+              index: 0,
+              routes: [{ name: 'Auth' }],
+            });
+          }
+          
           throw refreshError;
         } finally {
           this.isRefreshing = false;
@@ -119,16 +141,47 @@ class ApiService {
     const refreshToken = await AsyncStorage.getItem(Config.STORAGE_KEYS.REFRESH_TOKEN);
     if (!refreshToken) throw new Error('No refresh token');
 
-    const response = await this.authApi.post('/auth/refresh', {
+    const response = await this.authApi.post('/auth/refresh-token', {
       refreshToken,
     });
 
-    const { accessToken, refreshToken: newRefreshToken } = response.data.data.tokens;
+    const { accessToken, refreshToken: newRefreshToken } = response.data.data;
     
     await AsyncStorage.setItem(Config.STORAGE_KEYS.AUTH_TOKEN, accessToken);
     await AsyncStorage.setItem(Config.STORAGE_KEYS.REFRESH_TOKEN, newRefreshToken);
     
     return accessToken;
+  }
+
+  // Public method for refreshing tokens
+  async refreshAuthToken(): Promise<ApiResponse<AuthTokens>> {
+    try {
+      const refreshTokenValue = await AsyncStorage.getItem(Config.STORAGE_KEYS.REFRESH_TOKEN);
+      if (!refreshTokenValue) {
+        throw new Error('No refresh token');
+      }
+
+      const response = await this.authApi.post('/auth/refresh-token', {
+        refreshToken: refreshTokenValue,
+      });
+
+      const { accessToken, refreshToken: newRefreshToken } = response.data.data;
+      
+      await AsyncStorage.setItem(Config.STORAGE_KEYS.AUTH_TOKEN, accessToken);
+      await AsyncStorage.setItem(Config.STORAGE_KEYS.REFRESH_TOKEN, newRefreshToken);
+      
+      return {
+        success: true,
+        message: 'Token refreshed successfully',
+        data: {
+          accessToken,
+          refreshToken: newRefreshToken,
+        },
+      };
+    } catch (error) {
+      await this.clearAuth();
+      throw error;
+    }
   }
 
   private async clearAuth() {
@@ -139,7 +192,21 @@ class ApiService {
     ]);
   }
 
-  // Auth methods
+  // Check if user has valid tokens stored
+  async hasValidTokens(): Promise<boolean> {
+    try {
+      const [accessToken, refreshToken] = await AsyncStorage.multiGet([
+        Config.STORAGE_KEYS.AUTH_TOKEN,
+        Config.STORAGE_KEYS.REFRESH_TOKEN,
+      ]);
+      
+      return !!(accessToken[1] && refreshToken[1]);
+    } catch (error) {
+      return false;
+    }
+  }
+
+  // ========== AUTH METHODS ==========
   async signIn(email: string, password: string): Promise<ApiResponse> {
     const response = await this.authApi.post('/auth/signin', {
       email,
@@ -148,7 +215,14 @@ class ApiService {
     return response.data;
   }
 
-  async signUp(data: any): Promise<ApiResponse> {
+  async signUp(data: {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    phoneNumber?: string;
+    role: string;
+  }): Promise<ApiResponse> {
     const response = await this.authApi.post('/auth/signup', data);
     return response.data;
   }
@@ -157,16 +231,11 @@ class ApiService {
     try {
       const token = await AsyncStorage.getItem(Config.STORAGE_KEYS.REFRESH_TOKEN);
       if (token) {
-        // Use the correct endpoint path
         try {
           await this.authApi.post('/auth/logout', { refreshToken: token });
         } catch (error: any) {
-          // If logout endpoint doesn't exist, just clear local auth
-          if (error.response?.status === 404) {
-            console.log('Logout endpoint not found, clearing local auth');
-          } else {
-            console.error('Logout error:', error);
-          }
+          // Logout endpoint may not exist, just clear local auth
+          console.log('Logout endpoint error, clearing local auth');
         }
       }
     } catch (error) {
@@ -186,10 +255,33 @@ class ApiService {
     return response.data;
   }
 
-  // Course methods
+  async verifyEmail(token: string): Promise<ApiResponse> {
+    const response = await this.authApi.post('/auth/verify-email', { token });
+    return response.data;
+  }
+
+  async forgotPassword(email: string): Promise<ApiResponse> {
+    const response = await this.authApi.post('/auth/forgot-password', { email });
+    return response.data;
+  }
+
+  async resetPassword(token: string, password: string): Promise<ApiResponse> {
+    const response = await this.authApi.post('/auth/reset-password', {
+      token,
+      password,
+    });
+    return response.data;
+  }
+
+  // ========== COURSE METHODS ==========
   async getCourses(): Promise<ApiResponse<Course[]>> {
     const response = await this.attendanceApi.get('/courses');
     return response.data;
+  }
+
+  // Alias for getting user's enrolled courses (same as getCourses since backend filters by user)
+  async getMyCourses(): Promise<ApiResponse<Course[]>> {
+    return this.getCourses();
   }
 
   async getCourse(id: string): Promise<ApiResponse<Course>> {
@@ -202,9 +294,25 @@ class ApiService {
     return response.data;
   }
 
-  async joinCourse(code: string): Promise<ApiResponse<Course>> {
-    const response = await this.attendanceApi.post('/courses/join', { code });
+  async updateCourse(id: string, data: Partial<Course>): Promise<ApiResponse<Course>> {
+    const response = await this.attendanceApi.put(`/courses/${id}`, data);
     return response.data;
+  }
+
+  async deleteCourse(id: string): Promise<ApiResponse> {
+    const response = await this.attendanceApi.delete(`/courses/${id}`);
+    return response.data;
+  }
+
+  async enrollInCourse(code: string): Promise<ApiResponse<Course>> {
+    // Fixed endpoint - uses /enroll not /join
+    const response = await this.attendanceApi.post('/courses/enroll', { code });
+    return response.data;
+  }
+
+  // Alias for backward compatibility
+  async joinCourse(code: string): Promise<ApiResponse<Course>> {
+    return this.enrollInCourse(code);
   }
 
   async leaveCourse(id: string): Promise<ApiResponse> {
@@ -212,15 +320,29 @@ class ApiService {
     return response.data;
   }
 
-  // Session methods
-  async getSessions(courseId?: string): Promise<ApiResponse<Session[]>> {
-    const url = courseId ? `/courses/${courseId}/sessions` : '/sessions/active';
-    const response = await this.attendanceApi.get(url);
+  async getCourseMembers(courseId: string): Promise<ApiResponse<any[]>> {
+    const response = await this.attendanceApi.get(`/courses/${courseId}/members`);
     return response.data;
   }
 
+  // ========== SESSION METHODS ==========
   async getActiveSessions(): Promise<ApiResponse<Session[]>> {
     const response = await this.attendanceApi.get('/sessions/active');
+    return response.data;
+  }
+
+  async getCourseSessions(courseId: string): Promise<ApiResponse<Session[]>> {
+    const response = await this.attendanceApi.get(`/sessions/course/${courseId}`);
+    return response.data;
+  }
+
+  // Alias for backward compatibility
+  async getSessions(courseId: string): Promise<ApiResponse<Session[]>> {
+    return this.getCourseSessions(courseId);
+  }
+
+  async createSession(data: Partial<Session>): Promise<ApiResponse<Session>> {
+    const response = await this.attendanceApi.post('/sessions', data);
     return response.data;
   }
 
@@ -229,16 +351,9 @@ class ApiService {
     return response.data;
   }
 
-  async createSession(data: Partial<Session>): Promise<ApiResponse<Session>> {
-    const response = await this.attendanceApi.post('/sessions', data);
-    return response.data;
-  }
-
   async startSession(id: string, location?: { latitude: number; longitude: number }): Promise<ApiResponse<Session>> {
-    const response = await this.attendanceApi.post(`/sessions/${id}/start`, {
-      actualLatitude: location?.latitude,
-      actualLongitude: location?.longitude,
-    });
+    const data = location ? { location } : {};
+    const response = await this.attendanceApi.post(`/sessions/${id}/start`, data);
     return response.data;
   }
 
@@ -247,7 +362,12 @@ class ApiService {
     return response.data;
   }
 
-  // Attendance methods
+  async updateSession(id: string, data: Partial<Session>): Promise<ApiResponse<Session>> {
+    const response = await this.attendanceApi.put(`/sessions/${id}`, data);
+    return response.data;
+  }
+
+  // ========== ATTENDANCE METHODS ==========
   async markAttendance(data: {
     sessionId: string;
     latitude: number;

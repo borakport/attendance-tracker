@@ -99,6 +99,23 @@ export const updateProfile = createAsyncThunk(
   }
 );
 
+export const refreshToken = createAsyncThunk(
+  'auth/refreshToken',
+  async (_, { rejectWithValue }) => {
+    try {
+      const refreshTokenValue = await AsyncStorage.getItem(Config.STORAGE_KEYS.REFRESH_TOKEN);
+      if (!refreshTokenValue) {
+        throw new Error('No refresh token available');
+      }
+
+      const response = await ApiService.refreshAuthToken();
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error instanceof Error ? error.message : 'Token refresh failed');
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -184,6 +201,24 @@ const authSlice = createSlice({
       .addCase(updateProfile.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.error.message || 'Profile update failed';
+      });
+
+    // Refresh Token
+    builder
+      .addCase(refreshToken.pending, (state) => {
+        state.error = null;
+      })
+      .addCase(refreshToken.fulfilled, (state, action) => {
+        if (action.payload) {
+          state.tokens = action.payload;
+        }
+        state.error = null;
+      })
+      .addCase(refreshToken.rejected, (state, action) => {
+        state.tokens = null;
+        state.isAuthenticated = false;
+        state.user = null;
+        state.error = action.payload as string || 'Token refresh failed';
       });
   },
 });

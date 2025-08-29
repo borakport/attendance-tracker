@@ -56,6 +56,7 @@ export class SessionController {
           longitude,
           radiusMeters: radiusMeters || 50,
           locationName,
+          isActive: true,
           allowLateEntry: allowLateEntry ?? true,
           lateMinutes: lateMinutes || 15,
           requireSelfie: requireSelfie ?? false,
@@ -357,6 +358,60 @@ export class SessionController {
         success: true,
         message: 'Session retrieved successfully',
         data: session,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getByCourse(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { courseId } = req.params;
+      const userId = req.user!.userId;
+
+      // Check if user is a member of the course
+      const member = await prisma.courseMember.findUnique({
+        where: {
+          courseId_userId: {
+            courseId,
+            userId,
+          },
+        },
+      });
+
+      if (!member) {
+        res.status(403).json({
+          success: false,
+          message: 'You are not a member of this course',
+        });
+        return;
+      }
+
+      const sessions = await prisma.session.findMany({
+        where: { courseId },
+        include: {
+          course: {
+            select: {
+              id: true,
+              name: true,
+              code: true,
+            },
+          },
+          _count: {
+            select: {
+              attendances: true,
+            },
+          },
+        },
+        orderBy: {
+          startTime: 'desc',
+        },
+      });
+
+      res.status(200).json({
+        success: true,
+        message: 'Course sessions retrieved successfully',
+        data: sessions,
       });
     } catch (error) {
       next(error);

@@ -2,101 +2,99 @@ import React from 'react';
 import {
   View,
   StyleSheet,
-  Image,
   Dimensions,
-  StatusBar,
-  ScrollView,
 } from 'react-native';
 import {
   Text,
   Button,
   Title,
-  Surface,
+  Paragraph,
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation } from '@react-navigation/native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const { width, height } = Dimensions.get('window');
 
-export default function WelcomeScreen() {
-  const navigation = useNavigation<any>();
-
-  const handleSignIn = () => {
-    navigation.navigate('Auth', { screen: 'Login' });
-  };
-
-  const handleSignUp = () => {
-    navigation.navigate('Auth', { screen: 'Register' });
-  };
-
+export default function WelcomeScreen({ navigation }: any) {
   return (
     <LinearGradient
       colors={['#667eea', '#764ba2']}
       style={styles.container}
     >
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView 
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.content}>
-            <View style={styles.header}>
-              <View style={styles.logoContainer}>
-                <Image
-                  source={require('../../../assets/icon.png')}
-                  style={styles.logo}
-                  resizeMode="contain"
-                />
-              </View>
-              <Title style={styles.title}>GPS Attendance</Title>
-              <Text style={styles.subtitle}>
-                Track attendance with precision using GPS technology
-              </Text>
-            </View>
+        <View style={styles.content}>
+          {/* Logo/Icon */}
+          <View style={styles.logoContainer}>
+            <MaterialCommunityIcons 
+              name="school" 
+              size={120} 
+              color="white" 
+            />
+            <Title style={styles.title}>Smart Attendance</Title>
+            <Paragraph style={styles.subtitle}>
+              GPS-based attendance tracking for modern education
+            </Paragraph>
+          </View>
 
-            <View style={styles.features}>
-              <Surface style={styles.featureCard}>
-                <Text style={styles.featureIcon}>📍</Text>
-                <Text style={styles.featureText}>GPS-based verification</Text>
-              </Surface>
-              <Surface style={styles.featureCard}>
-                <Text style={styles.featureIcon}>⚡</Text>
-                <Text style={styles.featureText}>Real-time updates</Text>
-              </Surface>
-              <Surface style={styles.featureCard}>
-                <Text style={styles.featureIcon}>🔒</Text>
-                <Text style={styles.featureText}>Secure & reliable</Text>
-              </Surface>
+          {/* Features */}
+          <View style={styles.featuresContainer}>
+            <View style={styles.feature}>
+              <MaterialCommunityIcons name="map-marker-check" size={24} color="white" />
+              <Text style={styles.featureText}>Location-based verification</Text>
             </View>
-
-            <View style={styles.buttons}>
-              <Button
-                mode="contained"
-                onPress={handleSignIn}
-                style={styles.loginButton}
-                contentStyle={styles.buttonContent}
-                labelStyle={styles.buttonLabel}
-              >
-                Sign In
-              </Button>
-              <Button
-                mode="outlined"
-                onPress={handleSignUp}
-                style={styles.registerButton}
-                contentStyle={styles.buttonContent}
-                labelStyle={styles.registerButtonLabel}
-              >
-                Create Account
-              </Button>
-              
-              <Text style={styles.footer}>
-                By continuing, you agree to our Terms of Service
-              </Text>
+            <View style={styles.feature}>
+              <MaterialCommunityIcons name="qrcode-scan" size={24} color="white" />
+              <Text style={styles.featureText}>QR code scanning</Text>
+            </View>
+            <View style={styles.feature}>
+              <MaterialCommunityIcons name="chart-line" size={24} color="white" />
+              <Text style={styles.featureText}>Real-time analytics</Text>
             </View>
           </View>
-        </ScrollView>
+
+          {/* Action Buttons */}
+          <View style={styles.buttonContainer}>
+            <Button
+              mode="contained"
+              onPress={() => navigation.navigate('Login')}
+              style={[styles.button, styles.loginButton]}
+              contentStyle={styles.buttonContent}
+            >
+              Sign In
+            </Button>
+            
+            <Button
+              mode="outlined"
+              onPress={() => navigation.navigate('Register')}
+              style={[styles.button, styles.registerButton]}
+              contentStyle={styles.buttonContent}
+              labelStyle={styles.registerButtonText}
+            >
+              Create Account
+            </Button>
+          </View>
+
+          {/* Footer */}
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>
+              By continuing, you agree to our{' '}
+              <Text 
+                style={styles.link} 
+                onPress={() => navigation.navigate('Terms')}
+              >
+                Terms of Service
+              </Text>
+              {' '}and{' '}
+              <Text 
+                style={styles.link}
+                onPress={() => navigation.navigate('Privacy')}
+              >
+                Privacy Policy
+              </Text>
+            </Text>
+          </View>
+        </View>
       </SafeAreaView>
     </LinearGradient>
   );
@@ -109,97 +107,76 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  scrollContent: {
-    flexGrow: 1,
-  },
   content: {
     flex: 1,
-    paddingHorizontal: 30,
-    paddingBottom: 20,
+    paddingHorizontal: 32,
     justifyContent: 'space-between',
   },
-  header: {
-    alignItems: 'center',
-    marginTop: height * 0.05,
-  },
   logoContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    overflow: 'hidden',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    justifyContent: 'center',
     alignItems: 'center',
-  },
-  logo: {
-    width: 100,
-    height: 100,
+    marginTop: height * 0.1,
   },
   title: {
     fontSize: 32,
     fontWeight: 'bold',
     color: 'white',
     marginTop: 20,
-    marginBottom: 10,
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
     color: 'rgba(255, 255, 255, 0.9)',
     textAlign: 'center',
+    marginTop: 10,
     paddingHorizontal: 20,
-    lineHeight: 24,
   },
-  features: {
-    marginVertical: 30,
+  featuresContainer: {
+    marginVertical: 40,
   },
-  featureCard: {
+  feature: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 15,
-    elevation: 5,
-  },
-  featureIcon: {
-    fontSize: 28,
-    marginRight: 15,
+    marginBottom: 20,
+    paddingHorizontal: 20,
   },
   featureText: {
     fontSize: 16,
-    color: '#333',
-    flex: 1,
+    color: 'white',
+    marginLeft: 15,
   },
-  buttons: {
-    marginTop: 20,
+  buttonContainer: {
+    marginBottom: 30,
+  },
+  button: {
+    marginVertical: 8,
+    borderRadius: 25,
+  },
+  buttonContent: {
+    paddingVertical: 12,
   },
   loginButton: {
     backgroundColor: 'white',
-    borderRadius: 30,
-    marginBottom: 15,
   },
   registerButton: {
     borderColor: 'white',
     borderWidth: 2,
-    borderRadius: 30,
-    marginBottom: 20,
   },
-  buttonContent: {
-    paddingVertical: 8,
-  },
-  buttonLabel: {
-    color: '#667eea',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  registerButtonLabel: {
+  registerButtonText: {
     color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
   },
   footer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  footerText: {
+    fontSize: 12,
     color: 'rgba(255, 255, 255, 0.8)',
     textAlign: 'center',
-    fontSize: 12,
+    lineHeight: 18,
+  },
+  link: {
+    color: 'white',
+    textDecorationLine: 'underline',
+    fontWeight: 'bold',
   },
 });

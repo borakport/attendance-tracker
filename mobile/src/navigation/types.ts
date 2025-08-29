@@ -26,6 +26,7 @@ export type CourseStackParamList = {
   SessionList: { courseId: string };
   SessionDetail: { sessionId: string };
   CreateSession: { courseId: string };
+  CourseMembers: { courseId: string; courseName: string };
 };
 
 export type AttendanceStackParamList = {

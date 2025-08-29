@@ -25,6 +25,9 @@ export const fetchSessions = createAsyncThunk(
   'session/fetchSessions',
   async (courseId: string | undefined, { rejectWithValue }) => {
     try {
+      if (!courseId) {
+        throw new Error('Course ID is required');
+      }
       const response = await apiService.getSessions(courseId);
       return response.data;
     } catch (error) {

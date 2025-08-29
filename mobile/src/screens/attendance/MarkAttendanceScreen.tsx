@@ -16,9 +16,10 @@ import {
   Avatar,
   Chip,
   ProgressBar,
+  IconButton,
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import MapView, { Marker, Circle } from 'react-native-maps';
+// Removed react-native-maps dependency
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import * as Location from 'expo-location';
@@ -45,6 +46,20 @@ export default function MarkAttendanceScreen({ route, navigation }: any) {
   const [canMark, setCanMark] = useState(false);
   const [locationError, setLocationError] = useState('');
   const [countdown, setCountdown] = useState(10);
+
+  // Set navigation options with close button
+  useEffect(() => {
+    navigation.setOptions({
+      title: 'Mark Attendance',
+      headerRight: () => (
+        <IconButton
+          icon="close"
+          size={24}
+          onPress={() => navigation.goBack()}
+        />
+      ),
+    });
+  }, [navigation]);
 
   useEffect(() => {
     loadSession();
@@ -230,7 +245,7 @@ export default function MarkAttendanceScreen({ route, navigation }: any) {
                 icon="map-marker-check"
                 style={{ backgroundColor: statusInfo.color }}
               />
-              <View style={styles.statusText}>
+              <View style={styles.statusInfo}>
                 <Text style={styles.statusLabel}>Your Status</Text>
                 <Text style={[styles.statusValue, { color: statusInfo.color }]}>
                   {statusInfo.status}
@@ -274,57 +289,69 @@ export default function MarkAttendanceScreen({ route, navigation }: any) {
           </Card.Content>
         </Card>
 
-        <View style={styles.mapContainer}>
-          <MapView
-            style={styles.map}
-            initialRegion={{
-              latitude: session.latitude,
-              longitude: session.longitude,
-              latitudeDelta: 0.005,
-              longitudeDelta: 0.005,
-            }}
-            showsUserLocation={true}
-            showsMyLocationButton={true}
-          >
-            <Marker
-              coordinate={{
-                latitude: session.latitude,
-                longitude: session.longitude,
-              }}
-              title={session.name}
-              description="Session Location"
-            >
-              <View style={styles.markerContainer}>
-                <MaterialCommunityIcons name="school" size={30} color="#667eea" />
+        <View style={styles.locationContainer}>
+          <Card style={styles.locationCard}>
+            <Card.Content>
+              <View style={styles.locationHeader}>
+                <MaterialCommunityIcons name="map-marker" size={24} color="#667eea" />
+                <Title style={styles.locationTitle}>Location Status</Title>
               </View>
-            </Marker>
-            
-            <Circle
-              center={{
-                latitude: session.latitude,
-                longitude: session.longitude,
-              }}
-              radius={session.radiusMeters}
-              strokeColor="rgba(102, 126, 234, 0.5)"
-              fillColor="rgba(102, 126, 234, 0.1)"
-              strokeWidth={2}
-            />
-
-            {userLocation && (
-              <Marker
-                coordinate={{
-                  latitude: userLocation.coords.latitude,
-                  longitude: userLocation.coords.longitude,
-                }}
-                title="Your Location"
-                description={`Accuracy: ${Math.round(userLocation.coords.accuracy || 0)}m`}
-              >
-                <View style={styles.userMarker}>
-                  <MaterialCommunityIcons name="account" size={24} color="white" />
+              
+              <View style={styles.locationInfo}>
+                <View style={styles.locationItem}>
+                  <MaterialCommunityIcons name="school" size={20} color="#666" />
+                  <Text style={styles.locationText}>Session: {session.name}</Text>
                 </View>
-              </Marker>
-            )}
-          </MapView>
+                
+                {userLocation && (
+                  <View style={styles.locationItem}>
+                    <MaterialCommunityIcons name="account-lock" size={20} color="#666" />
+                    <Text style={styles.locationText}>
+                      Your Position: {userLocation.coords.latitude.toFixed(6)}, {userLocation.coords.longitude.toFixed(6)}
+                    </Text>
+                  </View>
+                )}
+                
+                {distance !== null && (
+                  <View style={styles.locationItem}>
+                    <MaterialCommunityIcons 
+                      name={canMark ? "check-circle" : "alert-circle"} 
+                      size={20} 
+                      color={canMark ? "#4CAF50" : "#FF9800"} 
+                    />
+                    <Text style={[
+                      styles.locationText,
+                      { color: canMark ? "#4CAF50" : "#FF9800" }
+                    ]}>
+                      Distance: {distance.toFixed(0)}m (Required: ≤{session.radiusMeters}m)
+                    </Text>
+                  </View>
+                )}
+                
+                {userLocation?.coords.accuracy && (
+                  <View style={styles.locationItem}>
+                    <MaterialCommunityIcons name="crosshairs-gps" size={20} color="#666" />
+                    <Text style={styles.locationText}>
+                      GPS Accuracy: ±{Math.round(userLocation.coords.accuracy)}m
+                    </Text>
+                  </View>
+                )}
+              </View>
+              
+              <Surface style={styles.statusIndicator}>
+                <View style={[
+                  styles.statusDot, 
+                  { backgroundColor: canMark ? "#4CAF50" : "#FF9800" }
+                ]} />
+                <Text style={[
+                  styles.locationStatusText,
+                  { color: canMark ? "#4CAF50" : "#FF9800" }
+                ]}>
+                  {canMark ? "You can mark attendance" : "Move closer to session location"}
+                </Text>
+              </Surface>
+            </Card.Content>
+          </Card>
         </View>
 
         <View style={styles.actionContainer}>
@@ -346,6 +373,15 @@ export default function MarkAttendanceScreen({ route, navigation }: any) {
             ) : (
               `Move ${locationService.formatDistance(Math.max(0, (distance || 0) - session.radiusMeters))} closer`
             )}
+          </Button>
+
+          <Button
+            mode="outlined"
+            onPress={() => navigation.goBack()}
+            style={styles.cancelButton}
+            icon="arrow-left"
+          >
+            Back to Sessions
           </Button>
 
           <Text style={styles.helpText}>
@@ -403,16 +439,12 @@ const styles = StyleSheet.create({
   chip: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
-  locationCard: {
-    margin: 16,
-    borderRadius: 16,
-  },
   statusContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 24,
   },
-  statusText: {
+  statusInfo: {
     marginLeft: 16,
     flex: 1,
   },
@@ -466,27 +498,52 @@ const styles = StyleSheet.create({
     color: '#666',
     fontSize: 14,
   },
-  mapContainer: {
-    height: 300,
+  locationContainer: {
     margin: 16,
+  },
+  locationCard: {
     borderRadius: 16,
-    overflow: 'hidden',
     elevation: 4,
   },
-  map: {
+  locationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  locationTitle: {
+    marginLeft: 8,
+    fontSize: 18,
+  },
+  locationInfo: {
+    marginBottom: 16,
+  },
+  locationItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  locationText: {
+    marginLeft: 12,
+    fontSize: 14,
+    color: '#333',
     flex: 1,
   },
-  markerContainer: {
-    backgroundColor: 'white',
-    padding: 8,
-    borderRadius: 20,
-    elevation: 5,
+  statusIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: '#f5f5f5',
   },
-  userMarker: {
-    backgroundColor: '#4CAF50',
-    padding: 6,
-    borderRadius: 20,
-    elevation: 5,
+  statusDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 8,
+  },
+  locationStatusText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
   actionContainer: {
     padding: 16,
@@ -497,6 +554,11 @@ const styles = StyleSheet.create({
   },
   markButtonContent: {
     paddingVertical: 12,
+  },
+  cancelButton: {
+    marginTop: 12,
+    borderRadius: 30,
+    borderColor: '#667eea',
   },
   helpText: {
     textAlign: 'center',
