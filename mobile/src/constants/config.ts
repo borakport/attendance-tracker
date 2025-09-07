@@ -10,7 +10,7 @@ export const Config = {
     NAME: 'GPS Attendance',
     VERSION: '1.0.0',
     DEBUG: process.env.EXPO_PUBLIC_DEBUG_MODE === 'true',
-    SHOW_TEST_ACCOUNTS: process.env.EXPO_PUBLIC_SHOW_TEST_ACCOUNTS === 'true',
+    SHOW_TEST_ACCOUNTS: process.env.EXPO_PUBLIC_SHOW_TEST_ACCOUNTS === 'true' || __DEV__,
   },
   
   GPS: {

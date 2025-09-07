@@ -30,6 +30,19 @@ import { UserRole } from '@/types';
 import { format } from 'date-fns';
 import Toast from 'react-native-toast-message';
 
+interface CourseMember {
+  id: string;
+  userId: string;
+  courseId: string;
+  role: string;
+  joinedAt: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}
+
 export default function ProfileScreen({ navigation }: any) {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
@@ -44,6 +57,30 @@ export default function ProfileScreen({ navigation }: any) {
     settings: false,
     support: false,
   });
+
+  // Helper function to safely parse dates from various formats
+  const safeParseDate = (dateValue: any): Date => {
+    if (!dateValue) return new Date();
+    
+    // If it's already a Date object
+    if (dateValue instanceof Date) {
+      return dateValue;
+    }
+    
+    // If it's a string (ISO format or other)
+    if (typeof dateValue === 'string') {
+      const parsed = new Date(dateValue);
+      return isNaN(parsed.getTime()) ? new Date() : parsed;
+    }
+    
+    // If it's a timestamp number
+    if (typeof dateValue === 'number') {
+      return new Date(dateValue);
+    }
+    
+    // Fallback
+    return new Date();
+  };
 
   useEffect(() => {
     loadStats();
@@ -122,11 +159,14 @@ export default function ProfileScreen({ navigation }: any) {
               apiService.getCourseSessions(course.id)
             ]);
             
-            const members = membersResponse.data || [];
+            // Handle new backend response format where members are nested in data.members
+            const responseData = membersResponse.data as any;
+            const members = Array.isArray(responseData?.members) ? responseData.members : 
+                           Array.isArray(responseData) ? responseData : [];
             const sessions = sessionsResponse.data || [];
             
             // Count students (exclude instructors)
-            const students = members.filter(member => 
+            const students = members.filter((member: CourseMember) => 
               member.role.toLowerCase() === 'student'
             );
             
@@ -137,7 +177,7 @@ export default function ProfileScreen({ navigation }: any) {
             endOfWeek.setDate(startOfWeek.getDate() + 6);
             
             const weekSessions = sessions.filter(session => {
-              const sessionDate = new Date(session.startTime);
+              const sessionDate = safeParseDate(session.startTime);
               return sessionDate >= startOfWeek && sessionDate <= endOfWeek;
             });
             

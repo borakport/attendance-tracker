@@ -5,25 +5,29 @@ import {
   createCourseSchema,
   enrollCourseSchema,
   updateCourseSchema,
-  updateMemberRoleSchema,
+  editCourseSchema,
+  courseSettingsSchema,
 } from '../validators/course.validator';
 
 const router = Router();
 
+// Course management
+router.get('/', CourseController.getMyCourses);  // Get user's courses
 router.post('/', validate(createCourseSchema), CourseController.create);
-router.get('/', CourseController.getAll);
+router.get('/my', CourseController.getMyCourses);
 router.post('/enroll', validate(enrollCourseSchema), CourseController.enroll);
-router.post('/:id/leave', CourseController.leave);
+router.get('/code/:code', CourseController.getByCode);
+
+// Specific course operations
 router.get('/:id', CourseController.getById);
 router.put('/:id', validate(updateCourseSchema), CourseController.update);
+router.patch('/:id/edit', validate(editCourseSchema), CourseController.editCourse);
+router.patch('/:id/settings', validate(courseSettingsSchema), CourseController.updateSettings);
 router.delete('/:id', CourseController.delete);
+
+// Course membership
+router.post('/:id/leave', CourseController.leave);
 router.get('/:id/members', CourseController.getMembers);
-router.patch(
-  '/:id/members/:userId',
-  validate(updateMemberRoleSchema),
-  CourseController.updateMemberRole
-);
-router.delete('/:id/members/:userId', CourseController.removeMember);
-router.get('/:id/sessions', CourseController.getCourseSessions);
+router.delete('/:id/members/:studentId', CourseController.removeStudent);
 
 export default router;

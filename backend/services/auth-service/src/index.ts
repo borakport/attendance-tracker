@@ -13,7 +13,6 @@ async function startServer() {
     // Connect to Redis
     await connectRedis();
     logger.info('Redis connected successfully');
-
     // Create Express app
     const app = createApp();
 
@@ -28,11 +27,6 @@ async function startServer() {
     // Graceful shutdown
     process.on('SIGTERM', async () => {
       logger.info('SIGTERM received, shutting down gracefully');
-      process.exit(0);
-    });
-
-    process.on('SIGINT', async () => {
-      logger.info('SIGINT received, shutting down gracefully');
       process.exit(0);
     });
 

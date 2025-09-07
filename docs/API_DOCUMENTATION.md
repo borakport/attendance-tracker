@@ -62,7 +62,7 @@
 ```
 
 ### Refresh Token
-**POST** `/auth/refresh`
+**POST** `/auth/refresh-token`
 
 **Request Body:**
 ```json
@@ -75,9 +75,31 @@
 ```json
 {
   "success": true,
+  "message": "Token refreshed successfully",
   "data": {
     "accessToken": "new-jwt-token",
     "refreshToken": "new-refresh-token"
+  }
+}
+```
+
+### Refresh Access Token Only
+**POST** `/auth/refresh-access-token`
+
+**Request Body:**
+```json
+{
+  "refreshToken": "refresh-token"
+}
+```
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "message": "Access token refreshed successfully",
+  "data": {
+    "accessToken": "new-jwt-token"
   }
 }
 ```

@@ -1,25 +1,71 @@
+/**
+ * API Service
+ * 
+ * This service provides a centralized HTTP client for communicating with backend services.
+ * It handles authentication, token refresh, request/response interceptors, and error handling
+ * for both auth and attendance microservices.
+ * 
+ * Key Features:
+ * - Automatic JWT token injection into requests
+ * - Token refresh mechanism with retry logic
+ * - Request/response logging for debugging
+ * - Centralized error handling with user notifications
+ * - Support for multiple backend services
+ * 
+ * Architecture:
+ * - Separate Axios instances for auth and attendance services
+ * - Interceptors for authentication and error handling
+ * - AsyncStorage integration for token persistence
+ * - Navigation integration for authentication redirects
+ */
+
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Config } from '@/constants/config';
-import { ApiResponse, Course, Session, Attendance, User, AuthTokens } from '@/types';
+import { ApiResponse, Course, Session, Attendance, User, AuthTokens, CourseSettings } from '@/types';
 import Toast from 'react-native-toast-message';
 import { NavigationContainerRef } from '@react-navigation/native';
 
-// Add navigation reference for token expiry handling
+// Navigation reference for handling authentication redirects
 let navigationRef: NavigationContainerRef<any> | null = null;
 
+// Store reference for dispatching logout actions
+let storeRef: any = null;
+
+/**
+ * Set navigation reference for API service
+ * Allows API service to navigate users when tokens expire
+ * 
+ * @param ref - React Navigation container reference
+ */
 export const setNavigationRef = (ref: NavigationContainerRef<any>) => {
   navigationRef = ref;
 };
 
+/**
+ * Set store reference for API service
+ * Allows API service to dispatch logout actions when needed
+ * 
+ * @param store - Redux store reference
+ */
+export const setStoreRef = (store: any) => {
+  storeRef = store;
+};
+
+/**
+ * API Service Class
+ * 
+ * Provides HTTP client functionality with automatic authentication,
+ * token management, and error handling for the mobile application.
+ */
 class ApiService {
-  private authApi: AxiosInstance;
-  private attendanceApi: AxiosInstance;
-  private isRefreshing = false;
-  private refreshSubscribers: ((token: string) => void)[] = [];
+  private authApi: AxiosInstance;           // Axios instance for auth service
+  private attendanceApi: AxiosInstance;     // Axios instance for attendance service
+  private isRefreshing = false;             // Flag to prevent multiple token refresh attempts
+  private refreshSubscribers: ((token: string | null) => void)[] = []; // Queue for requests waiting for token refresh
 
   constructor() {
-    // Auth Service API
+    // Initialize Auth Service API client
     this.authApi = axios.create({
       baseURL: Config.API.AUTH_URL,
       timeout: Config.API.TIMEOUT,
@@ -28,7 +74,7 @@ class ApiService {
       },
     });
 
-    // Attendance Service API
+    // Initialize Attendance Service API client
     this.attendanceApi = axios.create({
       baseURL: Config.API.ATTENDANCE_URL,
       timeout: Config.API.TIMEOUT,
@@ -37,17 +83,26 @@ class ApiService {
       },
     });
 
+    // Setup request and response interceptors for both clients
     this.setupInterceptors();
   }
 
+  /**
+   * Setup Request and Response Interceptors
+   * 
+   * Configures automatic token injection, request logging,
+   * and token refresh handling for both API clients.
+   */
   private setupInterceptors() {
-    // Request interceptor
+    // Request interceptor - adds authentication token and logging
     const requestInterceptor = async (config: InternalAxiosRequestConfig) => {
+      // Inject JWT token into request headers
       const token = await AsyncStorage.getItem(Config.STORAGE_KEYS.AUTH_TOKEN);
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
       }
       
+      // Log API requests in debug mode
       if (Config.APP.DEBUG) {
         console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`);
       }
@@ -55,7 +110,10 @@ class ApiService {
       return config;
     };
 
-    // Response error interceptor
+    /**
+     * Response error interceptor - handles token refresh and error logging
+     * Automatically refreshes expired tokens and retries failed requests
+     */
     const responseErrorInterceptor = async (error: AxiosError) => {
       const originalRequest: any = error.config;
 
@@ -63,40 +121,69 @@ class ApiService {
         console.error('❌ API Error:', error.response?.data || error.message);
       }
 
+      // Handle 401 (Unauthorized) errors - token expired
       if (error.response?.status === 401 && !originalRequest._retry) {
+        
+        // If we're already refreshing a token, queue this request
         if (this.isRefreshing) {
-          return new Promise((resolve) => {
-            this.refreshSubscribers.push((token: string) => {
-              originalRequest.headers.Authorization = `Bearer ${token}`;
-              resolve(axios(originalRequest));
+          return new Promise((resolve, reject) => {
+            this.refreshSubscribers.push((token: string | null) => {
+              if (token) {
+                originalRequest.headers.Authorization = `Bearer ${token}`;
+                resolve(axios(originalRequest));
+              } else {
+                reject(error);
+              }
             });
           });
         }
 
+        // Mark this request as retried to prevent infinite loops
         originalRequest._retry = true;
         this.isRefreshing = true;
 
         try {
-          const refreshResponse = await this.refreshAuthToken();
-          if (refreshResponse.data) {
-            const newToken = refreshResponse.data.accessToken;
-            this.onRefreshSuccess(newToken);
-            originalRequest.headers.Authorization = `Bearer ${newToken}`;
-            return axios(originalRequest);
-          } else {
-            throw new Error('Failed to refresh token');
-          }
-        } catch (refreshError) {
+          console.log('🔄 Access token expired, attempting automatic refresh...');
+          
+          // Attempt to refresh the access token
+          const newToken = await this.refreshToken();
+          
+          // Notify all queued requests about the new token
+          this.onRefreshSuccess(newToken);
+          
+          // Retry the original request with the new token
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          return axios(originalRequest);
+          
+        } catch (refreshError: any) {
+          console.error('❌ Token refresh failed:', refreshError.message);
+          
+          // Notify all queued requests that refresh failed
           this.onRefreshFailed();
+          
+          // Clear authentication data
           await this.clearAuth();
           
-          // Navigate to login and show token expired message
-          Toast.show({
-            type: 'error',
-            text1: 'Session Expired',
-            text2: 'Token expired, please login again',
-          });
+          // Check if the refresh token has expired (7 days)
+          if (refreshError.response?.status === 401 || refreshError.message?.includes('refresh token')) {
+            // Refresh token expired - automatic logout
+            Toast.show({
+              type: 'info',
+              text1: 'Session Expired',
+              text2: 'Please login again to continue',
+              visibilityTime: 4000,
+            });
+          } else {
+            // Other refresh errors
+            Toast.show({
+              type: 'error',
+              text1: 'Authentication Error',
+              text2: 'Please login again',
+              visibilityTime: 4000,
+            });
+          }
           
+          // Navigate to login screen
           if (navigationRef && navigationRef.isReady()) {
             navigationRef.reset({
               index: 0,
@@ -104,7 +191,8 @@ class ApiService {
             });
           }
           
-          throw refreshError;
+          // Re-throw the original error
+          throw error;
         } finally {
           this.isRefreshing = false;
         }
@@ -129,31 +217,58 @@ class ApiService {
   }
 
   private onRefreshSuccess(token: string) {
+    console.log('✅ Token refresh successful, retrying queued requests...');
     this.refreshSubscribers.forEach(callback => callback(token));
     this.refreshSubscribers = [];
   }
 
   private onRefreshFailed() {
+    console.log('❌ Token refresh failed, rejecting queued requests...');
+    this.refreshSubscribers.forEach(callback => callback(null));
     this.refreshSubscribers = [];
   }
 
   private async refreshToken(): Promise<string> {
-    const refreshToken = await AsyncStorage.getItem(Config.STORAGE_KEYS.REFRESH_TOKEN);
-    if (!refreshToken) throw new Error('No refresh token');
+    try {
+      const refreshToken = await AsyncStorage.getItem(Config.STORAGE_KEYS.REFRESH_TOKEN);
+      if (!refreshToken) {
+        throw new Error('No refresh token available');
+      }
 
-    const response = await this.authApi.post('/auth/refresh-token', {
-      refreshToken,
-    });
+      console.log('🔄 Refreshing access token...');
 
-    const { accessToken, refreshToken: newRefreshToken } = response.data.data;
-    
-    await AsyncStorage.setItem(Config.STORAGE_KEYS.AUTH_TOKEN, accessToken);
-    await AsyncStorage.setItem(Config.STORAGE_KEYS.REFRESH_TOKEN, newRefreshToken);
-    
-    return accessToken;
+      // Use the refresh-access-token endpoint that only refreshes the access token
+      const response = await this.authApi.post('/auth/refresh-access-token', {
+        refreshToken,
+      });
+
+      // The endpoint returns a new access token, keep the existing refresh token
+      const { accessToken } = response.data.data;
+      
+      if (!accessToken) {
+        throw new Error('No access token received from refresh endpoint');
+      }
+      
+      // Store the new access token
+      await AsyncStorage.setItem(Config.STORAGE_KEYS.AUTH_TOKEN, accessToken);
+      
+      console.log('✅ Access token refreshed successfully');
+      return accessToken;
+      
+    } catch (error: any) {
+      console.error('❌ Token refresh error:', error.response?.data || error.message);
+      
+      // If the refresh token is invalid/expired, the backend will return 401
+      if (error.response?.status === 401) {
+        throw new Error('Refresh token expired');
+      }
+      
+      // Re-throw with more context
+      throw new Error(`Token refresh failed: ${error.message}`);
+    }
   }
 
-  // Public method for refreshing tokens
+  // Public method for refreshing tokens (now uses refresh-access-token endpoint)
   async refreshAuthToken(): Promise<ApiResponse<AuthTokens>> {
     try {
       const refreshTokenValue = await AsyncStorage.getItem(Config.STORAGE_KEYS.REFRESH_TOKEN);
@@ -161,6 +276,40 @@ class ApiService {
         throw new Error('No refresh token');
       }
 
+      // Use the new refresh-access-token endpoint that only refreshes the access token
+      const response = await this.authApi.post('/auth/refresh-access-token', {
+        refreshToken: refreshTokenValue,
+      });
+
+      const { accessToken } = response.data.data;
+      
+      // Only update the access token, keep the existing refresh token
+      await AsyncStorage.setItem(Config.STORAGE_KEYS.AUTH_TOKEN, accessToken);
+      
+      return {
+        success: true,
+        message: 'Token refreshed successfully',
+        data: {
+          accessToken,
+          refreshToken: refreshTokenValue, // Return the existing refresh token
+        },
+      };
+    } catch (error) {
+      await this.clearAuth();
+      throw error;
+    }
+  }
+
+  // Public method for refreshing both access and refresh tokens (legacy endpoint)
+  // Use this only when you need to refresh both tokens (e.g., for long-term sessions)
+  async refreshBothTokens(): Promise<ApiResponse<AuthTokens>> {
+    try {
+      const refreshTokenValue = await AsyncStorage.getItem(Config.STORAGE_KEYS.REFRESH_TOKEN);
+      if (!refreshTokenValue) {
+        throw new Error('No refresh token');
+      }
+
+      // Use the legacy refresh-token endpoint that refreshes both tokens
       const response = await this.authApi.post('/auth/refresh-token', {
         refreshToken: refreshTokenValue,
       });
@@ -172,7 +321,7 @@ class ApiService {
       
       return {
         success: true,
-        message: 'Token refreshed successfully',
+        message: 'Both tokens refreshed successfully',
         data: {
           accessToken,
           refreshToken: newRefreshToken,
@@ -184,12 +333,48 @@ class ApiService {
     }
   }
 
+  // Public method for refreshing only access token (new preferred method)
+  async refreshAccessToken(): Promise<ApiResponse<{ accessToken: string }>> {
+    try {
+      const refreshTokenValue = await AsyncStorage.getItem(Config.STORAGE_KEYS.REFRESH_TOKEN);
+      if (!refreshTokenValue) {
+        throw new Error('No refresh token');
+      }
+
+      const response = await this.authApi.post('/auth/refresh-access-token', {
+        refreshToken: refreshTokenValue,
+      });
+
+      const { accessToken } = response.data.data;
+      
+      await AsyncStorage.setItem(Config.STORAGE_KEYS.AUTH_TOKEN, accessToken);
+      
+      return {
+        success: true,
+        message: 'Access token refreshed successfully',
+        data: {
+          accessToken,
+        },
+      };
+    } catch (error) {
+      await this.clearAuth();
+      throw error;
+    }
+  }
+
   private async clearAuth() {
+    // Clear tokens from AsyncStorage
     await AsyncStorage.multiRemove([
       Config.STORAGE_KEYS.AUTH_TOKEN,
       Config.STORAGE_KEYS.REFRESH_TOKEN,
       Config.STORAGE_KEYS.USER_DATA,
     ]);
+
+    // Dispatch logout action to update Redux state
+    if (storeRef) {
+      const { logout } = await import('@/store/slices/authSlice');
+      storeRef.dispatch(logout());
+    }
   }
 
   // Check if user has valid tokens stored
@@ -273,6 +458,11 @@ class ApiService {
     return response.data;
   }
 
+  async verifyPassword(password: string): Promise<ApiResponse> {
+    const response = await this.authApi.post('/auth/verify-password', { password });
+    return response.data;
+  }
+
   // ========== COURSE METHODS ==========
   async getCourses(): Promise<ApiResponse<Course[]>> {
     const response = await this.attendanceApi.get('/courses');
@@ -299,8 +489,20 @@ class ApiService {
     return response.data;
   }
 
-  async deleteCourse(id: string): Promise<ApiResponse> {
-    const response = await this.attendanceApi.delete(`/courses/${id}`);
+  async editCourse(id: string, data: { name?: string; description?: string; endDate?: string; password: string }): Promise<ApiResponse<Course>> {
+    const response = await this.attendanceApi.patch(`/courses/${id}/edit`, data);
+    return response.data;
+  }
+
+  async updateCourseSettings(id: string, data: { settings: Partial<CourseSettings>; password: string }): Promise<ApiResponse<Course>> {
+    const response = await this.attendanceApi.patch(`/courses/${id}/settings`, data);
+    return response.data;
+  }
+
+  async deleteCourse(id: string, password: string): Promise<ApiResponse> {
+    const response = await this.attendanceApi.delete(`/courses/${id}`, { 
+      data: { password } 
+    });
     return response.data;
   }
 
@@ -315,8 +517,8 @@ class ApiService {
     return this.enrollInCourse(code);
   }
 
-  async leaveCourse(id: string): Promise<ApiResponse> {
-    const response = await this.attendanceApi.post(`/courses/${id}/leave`);
+  async leaveCourse(id: string, password: string): Promise<ApiResponse> {
+    const response = await this.attendanceApi.post(`/courses/${id}/leave`, { password });
     return response.data;
   }
 
@@ -367,6 +569,11 @@ class ApiService {
     return response.data;
   }
 
+  async deleteSession(id: string): Promise<ApiResponse<void>> {
+    const response = await this.attendanceApi.delete(`/sessions/${id}`);
+    return response.data;
+  }
+
   // ========== ATTENDANCE METHODS ==========
   async markAttendance(data: {
     sessionId: string;
@@ -376,6 +583,18 @@ class ApiService {
     deviceInfo?: any;
   }): Promise<ApiResponse<Attendance>> {
     const response = await this.attendanceApi.post('/attendance/mark', data);
+    return response.data;
+  }
+
+  async addManualAttendance(data: {
+    sessionId: string;
+    userId: string;
+    status: string;
+    markedAt: string;
+    latitude: number;
+    longitude: number;
+  }): Promise<ApiResponse<Attendance>> {
+    const response = await this.attendanceApi.post('/attendance/manual', data);
     return response.data;
   }
 
@@ -392,6 +611,37 @@ class ApiService {
   async getAttendanceStats(courseId?: string): Promise<ApiResponse<any>> {
     const url = courseId ? `/attendance/stats?courseId=${courseId}` : '/attendance/stats';
     const response = await this.attendanceApi.get(url);
+    return response.data;
+  }
+
+  async updateAttendance(attendanceId: string, data: {
+    status?: string;
+    selfieUrl?: string;
+  }): Promise<ApiResponse<Attendance>> {
+    const response = await this.attendanceApi.put(`/attendance/${attendanceId}`, data);
+    return response.data;
+  }
+
+  async deleteAttendance(attendanceId: string): Promise<ApiResponse<void>> {
+    const response = await this.attendanceApi.delete(`/attendance/${attendanceId}`);
+    return response.data;
+  }
+
+  async bulkMarkAttendance(sessionId: string, attendanceData: Array<{
+    userId: string;
+    status: string;
+    notes?: string;
+  }>): Promise<ApiResponse<any>> {
+    const response = await this.attendanceApi.post('/attendance/bulk', {
+      sessionId,
+      attendanceData
+    });
+    return response.data;
+  }
+
+  // ========== SESSION MANAGEMENT METHODS ==========
+  async extendSessionForManualAttendance(sessionId: string): Promise<ApiResponse<Session>> {
+    const response = await this.attendanceApi.post(`/sessions/${sessionId}/extend`);
     return response.data;
   }
 }

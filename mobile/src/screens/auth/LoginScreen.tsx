@@ -17,11 +17,13 @@ import {
   HelperText,
   ActivityIndicator,
   Checkbox,
+  useTheme,
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Toast from 'react-native-toast-message';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import { useAppDispatch, useAppSelector } from '@/hooks/redux';
 import { signIn, clearError } from '@/store/slices/authSlice';
 import { Config } from '@/constants/config';
@@ -31,6 +33,7 @@ const { width } = Dimensions.get('window');
 export default function LoginScreen({ navigation }: any) {
   const dispatch = useAppDispatch();
   const { isLoading, error } = useAppSelector((state) => state.auth);
+  const theme = useTheme();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -63,7 +66,7 @@ export default function LoginScreen({ navigation }: any) {
         setRememberMe(true);
       }
     } catch (error) {
-      console.error('Error loading saved credentials:', error);
+      console.log('Error loading saved credentials:', error);
     }
   };
 
@@ -74,7 +77,7 @@ export default function LoginScreen({ navigation }: any) {
       return false;
     }
     if (!emailRegex.test(email)) {
-      setEmailError('Invalid email format');
+      setEmailError('Please enter a valid email address');
       return false;
     }
     setEmailError('');
@@ -86,8 +89,8 @@ export default function LoginScreen({ navigation }: any) {
       setPasswordError('Password is required');
       return false;
     }
-    if (password.length < 8) {
-      setPasswordError('Password must be at least 8 characters');
+    if (password.length < 6) {
+      setPasswordError('Password must be at least 6 characters');
       return false;
     }
     setPasswordError('');
@@ -97,45 +100,46 @@ export default function LoginScreen({ navigation }: any) {
   const handleLogin = async () => {
     const isEmailValid = validateEmail(email);
     const isPasswordValid = validatePassword(password);
-    
+
     if (!isEmailValid || !isPasswordValid) {
       return;
     }
 
     try {
-      // Save email if remember me is checked
+      await dispatch(signIn({ email: email.toLowerCase().trim(), password })).unwrap();
+      
       if (rememberMe) {
         await AsyncStorage.setItem('@saved_email', email);
       } else {
         await AsyncStorage.removeItem('@saved_email');
       }
 
-      await dispatch(signIn({ email, password })).unwrap();
-      
       Toast.show({
         type: 'success',
-        text1: 'Welcome Back!',
-        text2: 'Login successful',
+        text1: 'Welcome back!',
+        text2: 'You have successfully signed in',
         position: 'top',
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Login error:', error);
     }
   };
 
   const fillTestAccount = (type: 'student' | 'instructor') => {
     if (type === 'student') {
-      setEmail('student1@attendance.com');
-      setPassword('Student@123');
+      setEmail('alice.smith@student.edu');
+      setPassword('password123');
     } else {
-      setEmail('instructor@attendance.com');
-      setPassword('Instructor@123');
+      setEmail('prof.anderson@university.edu');
+      setPassword('password123');
     }
+    setEmailError('');
+    setPasswordError('');
   };
 
   return (
     <LinearGradient
-      colors={['#667eea', '#764ba2']}
+      colors={theme.dark ? ['#0F172A', '#1E293B'] : ['#667eea', '#764ba2']}
       style={styles.container}
     >
       <SafeAreaView style={styles.safeArea}>
@@ -149,24 +153,33 @@ export default function LoginScreen({ navigation }: any) {
             keyboardShouldPersistTaps="handled"
           >
             <View style={styles.header}>
-              <Title style={styles.title}>Welcome Back</Title>
-              <Text style={styles.subtitle}>Sign in to continue</Text>
+              <Title style={[styles.title, { color: theme.dark ? '#F8FAFC' : 'white' }]}>
+                Welcome Back
+              </Title>
+              <Text style={[styles.subtitle, { color: theme.dark ? '#E2E8F0' : 'rgba(255, 255, 255, 0.9)' }]}>
+                Sign in to Smart Attendance
+              </Text>
             </View>
 
-            <Card style={styles.card}>
+            <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
               <Card.Content>
                 <TextInput
-                  label="Email"
+                  label="Email Address"
                   value={email}
-                  onChangeText={setEmail}
+                  onChangeText={(text) => {
+                    setEmail(text);
+                    if (emailError) validateEmail(text);
+                  }}
                   onBlur={() => validateEmail(email)}
                   mode="outlined"
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
+                  autoComplete="email"
                   error={!!emailError}
                   style={styles.input}
                   left={<TextInput.Icon icon="email" />}
+                  placeholder="Enter your email"
                 />
                 <HelperText type="error" visible={!!emailError}>
                   {emailError}
@@ -175,13 +188,17 @@ export default function LoginScreen({ navigation }: any) {
                 <TextInput
                   label="Password"
                   value={password}
-                  onChangeText={setPassword}
+                  onChangeText={(text) => {
+                    setPassword(text);
+                    if (passwordError) validatePassword(text);
+                  }}
                   onBlur={() => validatePassword(password)}
                   mode="outlined"
                   secureTextEntry={!showPassword}
                   error={!!passwordError}
                   style={styles.input}
                   left={<TextInput.Icon icon="lock" />}
+                  placeholder="Enter your password"
                   right={
                     <TextInput.Icon
                       icon={showPassword ? 'eye-off' : 'eye'}
@@ -199,10 +216,12 @@ export default function LoginScreen({ navigation }: any) {
                       status={rememberMe ? 'checked' : 'unchecked'}
                       onPress={() => setRememberMe(!rememberMe)}
                     />
-                    <Text>Remember me</Text>
+                    <Text style={{ color: theme.colors.onSurface }}>Remember me</Text>
                   </View>
-                  <TouchableOpacity>
-                    <Text style={styles.forgotPassword}>Forgot Password?</Text>
+                  <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
+                    <Text style={[styles.forgotPassword, { color: theme.colors.primary }]}>
+                      Forgot Password?
+                    </Text>
                   </TouchableOpacity>
                 </View>
 
@@ -210,7 +229,7 @@ export default function LoginScreen({ navigation }: any) {
                   mode="contained"
                   onPress={handleLogin}
                   disabled={isLoading}
-                  style={styles.loginButton}
+                  style={[styles.loginButton, { backgroundColor: theme.colors.primary }]}
                   contentStyle={styles.buttonContent}
                 >
                   {isLoading ? (
@@ -221,13 +240,15 @@ export default function LoginScreen({ navigation }: any) {
                 </Button>
 
                 <View style={styles.divider}>
-                  <View style={styles.dividerLine} />
-                  <Text style={styles.dividerText}>OR</Text>
-                  <View style={styles.dividerLine} />
+                  <View style={[styles.dividerLine, { backgroundColor: theme.colors.outline }]} />
+                  <Text style={[styles.dividerText, { color: theme.colors.onSurfaceVariant }]}>OR</Text>
+                  <View style={[styles.dividerLine, { backgroundColor: theme.colors.outline }]} />
                 </View>
 
                 <View style={styles.footer}>
-                  <Text style={styles.footerText}>Don't have an account?</Text>
+                  <Text style={[styles.footerText, { color: theme.colors.onSurfaceVariant }]}>
+                    Don't have an account?
+                  </Text>
                   <Button
                     mode="text"
                     onPress={() => navigation.navigate('Register')}
@@ -238,8 +259,14 @@ export default function LoginScreen({ navigation }: any) {
                 </View>
 
                 {Config.APP.SHOW_TEST_ACCOUNTS && (
-                  <View style={styles.testAccounts}>
-                    <Text style={styles.testTitle}>Test Accounts:</Text>
+                  <View style={[styles.testAccounts, { 
+                    backgroundColor: theme.dark ? 'rgba(59, 130, 246, 0.1)' : '#f5f5f5',
+                    borderColor: theme.dark ? 'rgba(59, 130, 246, 0.2)' : 'transparent',
+                    borderWidth: theme.dark ? 1 : 0
+                  }]}>
+                    <Text style={[styles.testTitle, { color: theme.colors.onSurfaceVariant }]}>
+                      🚀 Quick Test Login:
+                    </Text>
                     <View style={styles.testButtons}>
                       <Button
                         mode="outlined"
@@ -291,12 +318,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: 'white',
     marginBottom: 5,
   },
   subtitle: {
     fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.9)',
   },
   card: {
     borderRadius: 20,
@@ -319,12 +344,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   forgotPassword: {
-    color: '#667eea',
     fontWeight: 'bold',
   },
   loginButton: {
     borderRadius: 25,
-    backgroundColor: '#667eea',
   },
   buttonContent: {
     paddingVertical: 8,
@@ -337,11 +360,9 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#e0e0e0',
   },
   dividerText: {
     marginHorizontal: 10,
-    color: '#666',
   },
   footer: {
     flexDirection: 'row',
@@ -357,14 +378,13 @@ const styles = StyleSheet.create({
   testAccounts: {
     marginTop: 20,
     padding: 15,
-    backgroundColor: '#f5f5f5',
     borderRadius: 10,
   },
   testTitle: {
-    fontSize: 12,
-    color: '#666',
+    fontSize: 14,
     marginBottom: 10,
     textAlign: 'center',
+    fontWeight: '600',
   },
   testButtons: {
     flexDirection: 'row',

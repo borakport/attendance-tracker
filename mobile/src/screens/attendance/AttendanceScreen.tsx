@@ -478,8 +478,11 @@ export default function AttendanceScreen({ route, navigation }: Props) {
       <Card 
         style={styles.card}
         onPress={() => navigation.navigate('Courses', {
-          screen: 'CourseDetail',
-          params: { courseId: item.courseId }
+          screen: 'SessionsList',
+          params: { 
+            courseId: item.courseId,
+            courseName: item.course?.name 
+          }
         })}
       >
         <Card.Content>

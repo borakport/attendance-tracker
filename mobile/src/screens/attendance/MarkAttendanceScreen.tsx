@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -33,6 +33,19 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 const { width, height } = Dimensions.get('window');
 
+// Safe date formatting helper
+const safeFormatDate = (dateValue: any, formatString: string, fallback: string = 'N/A'): string => {
+  try {
+    if (!dateValue) return fallback;
+    const date = new Date(dateValue);
+    if (isNaN(date.getTime())) return fallback;
+    return format(date, formatString);
+  } catch (error) {
+    console.warn('Date formatting error:', error);
+    return fallback;
+  }
+};
+
 export default function MarkAttendanceScreen({ route, navigation }: any) {
   const { sessionId } = route.params;
   const dispatch = useAppDispatch();
@@ -46,6 +59,7 @@ export default function MarkAttendanceScreen({ route, navigation }: any) {
   const [canMark, setCanMark] = useState(false);
   const [locationError, setLocationError] = useState('');
   const [countdown, setCountdown] = useState(10);
+  const isMountedRef = useRef(true);
 
   // Set navigation options with close button
   useEffect(() => {
@@ -55,7 +69,12 @@ export default function MarkAttendanceScreen({ route, navigation }: any) {
         <IconButton
           icon="close"
           size={24}
-          onPress={() => navigation.goBack()}
+          onPress={() => {
+            // Navigate back to the sessions list only if component is mounted
+            if (isMountedRef.current) {
+              navigation.navigate('AttendanceHistory');
+            }
+          }}
         />
       ),
     });
@@ -63,23 +82,84 @@ export default function MarkAttendanceScreen({ route, navigation }: any) {
 
   useEffect(() => {
     loadSession();
-    startLocationTracking();
+    // Don't automatically start location tracking - wait for user action
     
     return () => {
-      // Cleanup location tracking
+      // Cleanup location tracking and mark component as unmounted
+      isMountedRef.current = false;
     };
   }, [sessionId]);
 
   useEffect(() => {
     if (userLocation && session) {
-      const dist = locationService.calculateDistance(
-        userLocation.coords.latitude,
-        userLocation.coords.longitude,
-        session.latitude,
-        session.longitude
-      );
-      setDistance(dist);
-      setCanMark(dist <= session.radiusMeters);
+      console.log('Distance calculation inputs:', {
+        userLat: userLocation.coords.latitude,
+        userLon: userLocation.coords.longitude,
+        sessionLat: session.latitude,
+        sessionLon: session.longitude,
+        userCoordsType: typeof userLocation.coords.latitude,
+        sessionCoordsType: typeof session.latitude
+      });
+      
+      // Convert session coordinates to numbers if they're strings
+      const sessionLat = typeof session.latitude === 'string' ? parseFloat(session.latitude) : session.latitude;
+      const sessionLon = typeof session.longitude === 'string' ? parseFloat(session.longitude) : session.longitude;
+      
+      console.log('Converted coordinates:', {
+        sessionLat,
+        sessionLon,
+        sessionLatType: typeof sessionLat,
+        sessionLonType: typeof sessionLon
+      });
+      
+      // Check if session has valid coordinates (after conversion)
+      if (sessionLat != null && sessionLon != null && 
+          !isNaN(sessionLat) && !isNaN(sessionLon) && 
+          isFinite(sessionLat) && isFinite(sessionLon)) {
+        
+        // Also check user coordinates
+        if (userLocation.coords.latitude != null && userLocation.coords.longitude != null &&
+            !isNaN(userLocation.coords.latitude) && !isNaN(userLocation.coords.longitude)) {
+          
+          const dist = locationService.calculateDistance(
+            userLocation.coords.latitude,
+            userLocation.coords.longitude,
+            sessionLat,
+            sessionLon
+          );
+          
+          console.log('Calculated distance:', dist, 'meters');
+          
+          // Ensure distance is a valid number
+          if (!isNaN(dist) && isFinite(dist)) {
+            setDistance(dist);
+            setCanMark(dist <= session.radiusMeters);
+          } else {
+            console.warn('Calculated distance is invalid:', dist);
+            setDistance(null);
+            setCanMark(false);
+            setLocationError('Unable to calculate distance to session location');
+          }
+        } else {
+          console.warn('User coordinates are invalid:', {
+            userLat: userLocation.coords.latitude,
+            userLon: userLocation.coords.longitude
+          });
+          setDistance(null);
+          setCanMark(false);
+          setLocationError('Unable to get accurate location coordinates');
+        }
+      } else {
+        console.warn('Session coordinates are invalid even after conversion:', {
+          originalLat: session.latitude,
+          originalLon: session.longitude,
+          convertedLat: sessionLat,
+          convertedLon: sessionLon
+        });
+        setDistance(null);
+        setCanMark(false);
+        setLocationError('Session location not configured properly');
+      }
     }
   }, [userLocation, session]);
 
@@ -100,9 +180,59 @@ export default function MarkAttendanceScreen({ route, navigation }: any) {
 
   const loadSession = async () => {
     try {
+      console.log('Loading session with ID:', sessionId);
       const response = await apiService.getSession(sessionId);
       if (response.data) {
-        setSession(response.data);
+        const rawSessionData = response.data;
+        console.log('Raw session data received:', {
+          id: rawSessionData.id,
+          name: rawSessionData.name,
+          startTime: rawSessionData.startTime,
+          endTime: rawSessionData.endTime,
+          startTimeType: typeof rawSessionData.startTime,
+          latitude: rawSessionData.latitude,
+          longitude: rawSessionData.longitude,
+          latitudeType: typeof rawSessionData.latitude,
+          longitudeType: typeof rawSessionData.longitude,
+          radiusMeters: rawSessionData.radiusMeters
+        });
+        
+        // Process session data to ensure proper format
+        const processedSession = {
+          ...rawSessionData,
+          // Ensure dates are properly formatted as ISO strings
+          startTime: rawSessionData.startTime ? 
+            (typeof rawSessionData.startTime === 'string' ? rawSessionData.startTime : new Date(rawSessionData.startTime).toISOString()) : 
+            new Date().toISOString(),
+          endTime: rawSessionData.endTime ? 
+            (typeof rawSessionData.endTime === 'string' ? rawSessionData.endTime : new Date(rawSessionData.endTime).toISOString()) : 
+            new Date().toISOString(),
+          // Ensure location data is properly formatted
+          latitude: typeof rawSessionData.latitude === 'number' ? rawSessionData.latitude : parseFloat(rawSessionData.latitude) || 0,
+          longitude: typeof rawSessionData.longitude === 'number' ? rawSessionData.longitude : parseFloat(rawSessionData.longitude) || 0,
+          locationName: rawSessionData.locationName || 'Location not specified',
+          // Ensure radius is a number
+          radiusMeters: typeof rawSessionData.radiusMeters === 'number' ? rawSessionData.radiusMeters : parseFloat(rawSessionData.radiusMeters) || 50,
+          // Ensure boolean values
+          isActive: Boolean(rawSessionData.isActive),
+          allowLateEntry: Boolean(rawSessionData.allowLateEntry),
+          requireSelfie: Boolean(rawSessionData.requireSelfie),
+          // Ensure numeric values
+          lateMinutes: typeof rawSessionData.lateMinutes === 'number' ? rawSessionData.lateMinutes : parseInt(rawSessionData.lateMinutes) || 15,
+        };
+        
+        console.log('Processed session data for attendance:', {
+          id: processedSession.id,
+          name: processedSession.name,
+          latitude: processedSession.latitude,
+          longitude: processedSession.longitude,
+          radiusMeters: processedSession.radiusMeters,
+          locationName: processedSession.locationName
+        });
+        
+        setSession(processedSession);
+      } else {
+        console.warn('No session data received');
       }
       setIsLoading(false);
     } catch (error) {
@@ -139,19 +269,99 @@ export default function MarkAttendanceScreen({ route, navigation }: any) {
     }
   };
 
+  const requestLocationAndStartTracking = async (): Promise<boolean> => {
+    try {
+      // First check if we already have permissions
+      const { status } = await Location.getForegroundPermissionsAsync();
+      
+      if (status !== 'granted') {
+        // Show permission request dialog
+        Alert.alert(
+          'Location Permission Required',
+          'This app needs access to your location to verify your attendance. Please grant location permission.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Allow Location',
+              onPress: async () => {
+                const success = await locationService.requestPermissions();
+                if (success) {
+                  await startLocationTracking();
+                } else {
+                  setLocationError('Location permission is required to mark attendance');
+                  Toast.show({
+                    type: 'error',
+                    text1: 'Permission Required',
+                    text2: 'Please enable location permissions in your device settings',
+                    visibilityTime: 4000,
+                  });
+                }
+              }
+            }
+          ],
+          { cancelable: false }
+        );
+        return false;
+      } else {
+        // We have permissions, start tracking
+        await startLocationTracking();
+        return true;
+      }
+    } catch (error) {
+      console.error('Error requesting location permissions:', error);
+      setLocationError('Failed to request location permissions');
+      return false;
+    }
+  };
+
   const handleMarkAttendance = async () => {
-    if (!userLocation || !session) return;
+    if (!session) return;
+
+    // Check if we have location data, if not try to get it
+    if (!userLocation) {
+      const locationGranted = await requestLocationAndStartTracking();
+      if (!locationGranted) {
+        return; // User denied permission or there was an error
+      }
+      
+      // Wait a moment for location to be acquired
+      Toast.show({
+        type: 'info',
+        text1: 'Getting your location...',
+        text2: 'Please wait while we determine your position',
+      });
+      
+      // Give some time for location to be acquired
+      setTimeout(() => {
+        if (!userLocation) {
+          Toast.show({
+            type: 'error',
+            text1: 'Location Required',
+            text2: 'Unable to get your location. Please try again.',
+          });
+        }
+      }, 5000);
+      
+      return;
+    }
 
     Alert.alert(
       'Confirm Attendance',
-      `Mark attendance for ${session.name}?\n\nDistance: ${distance}m from session location`,
+      `Mark attendance for ${session.name}?\n\nDistance: ${distance !== null ? distance : 'Calculating...'}m from session location`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Confirm',
           onPress: async () => {
             try {
-              if (!userLocation) return;
+              if (!userLocation) {
+                Toast.show({
+                  type: 'error',
+                  text1: 'Location Required',
+                  text2: 'Please enable location access and try again',
+                });
+                return;
+              }
               
               await dispatch(markAttendance({
                 sessionId,
@@ -162,10 +372,22 @@ export default function MarkAttendanceScreen({ route, navigation }: any) {
               Toast.show({
                 type: 'success',
                 text1: 'Attendance Marked!',
-                text2: `You are ${distance}m from the session location`,
+                text2: `You are ${distance !== null && !isNaN(distance) ? Math.round(distance) : 'within'}m from the session location`,
               });
               
-              navigation.goBack();
+              // Small delay to ensure Redux state updates complete
+              setTimeout(() => {
+                // Only navigate if component is still mounted
+                if (isMountedRef.current) {
+                  try {
+                    navigation.navigate('AttendanceHistory');
+                  } catch (navError) {
+                    console.error('Navigation error after marking attendance:', navError);
+                    // Fallback to goBack if navigate fails
+                    navigation.goBack();
+                  }
+                }
+              }, 100);
             } catch (error: any) {
               Toast.show({
                 type: 'error',
@@ -180,7 +402,9 @@ export default function MarkAttendanceScreen({ route, navigation }: any) {
   };
 
   const getStatusInfo = () => {
-    if (!distance) return { color: '#999', status: 'Calculating...' };
+    if (distance === null || distance === undefined || isNaN(distance)) {
+      return { color: '#999', status: 'Calculating...' };
+    }
     if (!session) return { color: '#999', status: 'Loading...' };
     
     if (distance <= session.radiusMeters) {
@@ -228,7 +452,7 @@ export default function MarkAttendanceScreen({ route, navigation }: any) {
             <Text style={styles.courseName}>Course ID: {session.courseId}</Text>
             <View style={styles.sessionInfo}>
               <Chip icon="clock" style={styles.chip}>
-                {format(new Date(session.startTime), 'h:mm a')}
+                {safeFormatDate(session.startTime, 'h:mm a', 'Time TBD')}
               </Chip>
               <Chip icon="map-marker-radius" style={styles.chip}>
                 {session.radiusMeters}m radius
@@ -253,6 +477,15 @@ export default function MarkAttendanceScreen({ route, navigation }: any) {
               </View>
             </View>
 
+            {!userLocation && !locationError && (
+              <Surface style={styles.infoSurface}>
+                <MaterialCommunityIcons name="map-marker-question" size={20} color="#2196F3" />
+                <Text style={styles.infoMessage}>
+                  Location access required to verify attendance. Tap "Enable Location" below to continue.
+                </Text>
+              </Surface>
+            )}
+
             {distance !== null && (
               <View style={styles.distanceContainer}>
                 <Text style={styles.distanceLabel}>Distance from Session</Text>
@@ -260,7 +493,8 @@ export default function MarkAttendanceScreen({ route, navigation }: any) {
                   {locationService.formatDistance(distance)}
                 </Text>
                 <ProgressBar
-                  progress={Math.max(0, 1 - (distance / (session.radiusMeters * 2)))}
+                  progress={distance !== null && session?.radiusMeters ? 
+                    Math.max(0, Math.min(1, 1 - (distance / (session.radiusMeters * 2)))) : 0}
                   color={statusInfo.color}
                   style={styles.progressBar}
                 />
@@ -323,7 +557,7 @@ export default function MarkAttendanceScreen({ route, navigation }: any) {
                       styles.locationText,
                       { color: canMark ? "#4CAF50" : "#FF9800" }
                     ]}>
-                      Distance: {distance.toFixed(0)}m (Required: ≤{session.radiusMeters}m)
+                      Distance: {distance !== null ? distance.toFixed(0) : 'N/A'}m (Required: ≤{session.radiusMeters}m)
                     </Text>
                   </View>
                 )}
@@ -358,16 +592,18 @@ export default function MarkAttendanceScreen({ route, navigation }: any) {
           <Button
             mode="contained"
             onPress={handleMarkAttendance}
-            disabled={!canMark || loading}
+            disabled={loading}
             style={[
               styles.markButton,
-              { backgroundColor: canMark ? '#4CAF50' : '#999' }
+              { backgroundColor: (!userLocation || (userLocation && canMark)) ? '#4CAF50' : '#999' }
             ]}
             contentStyle={styles.markButtonContent}
-            icon="check-circle"
+            icon={!userLocation ? "map-marker" : "check-circle"}
           >
             {loading ? (
               <ActivityIndicator color="white" />
+            ) : !userLocation ? (
+              'Enable Location & Mark Attendance'
             ) : canMark ? (
               'Mark Attendance'
             ) : (
@@ -377,7 +613,11 @@ export default function MarkAttendanceScreen({ route, navigation }: any) {
 
           <Button
             mode="outlined"
-            onPress={() => navigation.goBack()}
+            onPress={() => {
+              if (isMountedRef.current) {
+                navigation.navigate('AttendanceHistory');
+              }
+            }}
             style={styles.cancelButton}
             icon="arrow-left"
           >
@@ -566,5 +806,19 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 12,
     paddingHorizontal: 20,
+  },
+  infoSurface: {
+    padding: 16,
+    margin: 16,
+    borderRadius: 8,
+    backgroundColor: '#E3F2FD',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  infoMessage: {
+    marginLeft: 12,
+    flex: 1,
+    color: '#1976D2',
+    fontSize: 14,
   },
 });

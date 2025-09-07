@@ -48,6 +48,30 @@ export default function MarkAttendanceScreen({ route, navigation }: any) {
   const [countdown, setCountdown] = useState(10);
   const [locationAddress, setLocationAddress] = useState<string>('');
 
+  // Helper function to safely parse dates from various formats
+  const safeParseDate = (dateValue: any): Date => {
+    if (!dateValue) return new Date();
+    
+    // If it's already a Date object
+    if (dateValue instanceof Date) {
+      return dateValue;
+    }
+    
+    // If it's a string (ISO format or other)
+    if (typeof dateValue === 'string') {
+      const parsed = new Date(dateValue);
+      return isNaN(parsed.getTime()) ? new Date() : parsed;
+    }
+    
+    // If it's a timestamp number
+    if (typeof dateValue === 'number') {
+      return new Date(dateValue);
+    }
+    
+    // Fallback
+    return new Date();
+  };
+
   useEffect(() => {
     loadSession();
     startLocationTracking();
@@ -217,7 +241,7 @@ export default function MarkAttendanceScreen({ route, navigation }: any) {
             <Text style={styles.courseName}>Course Session</Text>
             <View style={styles.sessionInfo}>
               <Chip icon="clock" style={styles.chip}>
-                {format(new Date(session.startTime), 'h:mm a')}
+                {format(safeParseDate(session.startTime), 'h:mm a')}
               </Chip>
               <Chip icon="map-marker-radius" style={styles.chip}>
                 {session.radiusMeters}m radius

@@ -1,3 +1,20 @@
+/**
+ * Email Service
+ * 
+ * This service handles all email communications for the authentication system:
+ * - Email verification for new registrations
+ * - Password reset emails
+ * - Welcome emails for verified users
+ * - Development mode console logging
+ * - Production SMTP configuration
+ * 
+ * Features:
+ * - Professional HTML email templates
+ * - Fallback text versions
+ * - Environment-specific configurations
+ * - Error handling and logging
+ */
+
 import nodemailer from 'nodemailer';
 import { constants } from '../config/constants';
 import logger from '../config/logger';
@@ -190,6 +207,8 @@ export class EmailService {
       </html>
     `;
 
+    // Send the welcome email using the configured email service
+    // This confirms successful account setup and provides feature overview
     await this.sendEmail({
       to: email,
       subject: 'Welcome to GPS Attendance Tracker',

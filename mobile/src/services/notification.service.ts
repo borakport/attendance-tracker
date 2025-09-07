@@ -10,6 +10,8 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
@@ -155,7 +157,7 @@ class NotificationService {
         'Session Starting Soon',
         `${sessionName} starts in 10 minutes`,
         { type: 'session_reminder' },
-        { date: reminderTime }
+        { type: Notifications.SchedulableTriggerInputTypes.DATE, date: reminderTime }
       );
     }
   }

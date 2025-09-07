@@ -7,7 +7,7 @@ export interface AuthRequest extends Request {
   user?: {
     userId: string;
     email: string;
-    role: string;
+    role: UserRole;
   };
 }
 
@@ -27,7 +27,7 @@ export const authenticate = async (
       return;
     }
 
-    const token = authHeader.substring(7);
+    const token = authHeader.split(' ')[1];
     
     // Check if token is blacklisted
     const isBlacklisted = await JWTUtils.isTokenBlacklisted(token);
@@ -44,7 +44,7 @@ export const authenticate = async (
     req.user = {
       userId: decoded.userId,
       email: decoded.email,
-      role: decoded.role,
+      role: decoded.role as UserRole,
     };
     
     next();

@@ -70,6 +70,14 @@ class LocationService {
         mayShowUserSettingsDialog: true,
       });
 
+      console.log('📍 Got current location:', {
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        accuracy: location.coords.accuracy,
+        latType: typeof location.coords.latitude,
+        lonType: typeof location.coords.longitude
+      });
+
       this.currentLocation = location;
       return location;
     } catch (error) {
@@ -171,6 +179,13 @@ class LocationService {
     lat2: number,
     lon2: number
   ): number {
+    // Validate inputs
+    if (lat1 == null || lon1 == null || lat2 == null || lon2 == null ||
+        isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2)) {
+      console.warn('Invalid coordinates provided to calculateDistance:', { lat1, lon1, lat2, lon2 });
+      return NaN;
+    }
+    
     const R = 6371000; // Earth's radius in meters
     const dLat = this.toRadians(lat2 - lat1);
     const dLon = this.toRadians(lon2 - lon1);
@@ -183,7 +198,9 @@ class LocationService {
       Math.sin(dLon / 2);
     
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return Math.round(R * c); // Return distance in meters
+    const distance = R * c;
+    
+    return Math.round(distance); // Return distance in meters
   }
 
   private toRadians(degrees: number): number {
@@ -202,8 +219,13 @@ class LocationService {
   }
 
   formatDistance(meters: number): string {
+    // Handle invalid inputs
+    if (meters == null || isNaN(meters) || !isFinite(meters)) {
+      return 'N/A';
+    }
+    
     if (meters < 1000) {
-      return `${meters}m`;
+      return `${Math.round(meters)}m`;
     }
     return `${(meters / 1000).toFixed(2)}km`;
   }

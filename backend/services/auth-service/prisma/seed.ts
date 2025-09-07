@@ -1,7 +1,28 @@
 import { PrismaClient, UserRole, CourseRole, AttendanceStatus } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { CodeGenerator } from '../src/utils';
 
 const prisma = new PrismaClient();
+
+// Generate a unique course code
+async function generateUniqueCourseCode(): Promise<string> {
+  let code: string;
+  let isUnique = false;
+
+  while (!isUnique) {
+    code = CodeGenerator.generateCourseCode();
+    
+    const existingCourse = await prisma.course.findUnique({
+      where: { code },
+    });
+
+    if (!existingCourse) {
+      isUnique = true;
+    }
+  }
+
+  return code!;
+}
 
 async function main() {
   console.log('🌱 Starting seed...');
@@ -90,7 +111,7 @@ async function main() {
     data: {
       name: 'Computer Science 101',
       description: 'Introduction to Computer Science',
-      code: 'CS101' + Math.random().toString(36).substring(2, 6).toUpperCase(),
+      code: await generateUniqueCourseCode(),
       ownerId: instructor.id,
       settings: {
         gpsRadius: 50,
@@ -110,7 +131,7 @@ async function main() {
     data: {
       name: 'Web Development',
       description: 'Full-stack web development with modern technologies',
-      code: 'WEB201' + Math.random().toString(36).substring(2, 6).toUpperCase(),
+      code: await generateUniqueCourseCode(),
       ownerId: instructor.id,
       settings: {
         gpsRadius: 75,

@@ -38,6 +38,14 @@ export default function JoinCourseScreen({ navigation }: any) {
     }
   }, []);
 
+  useEffect(() => {
+    // Set navigation options to ensure there's a back button
+    navigation.setOptions({
+      title: 'Join Course',
+      headerShown: true,
+    });
+  }, [navigation]);
+
   const validateCode = (code: string) => {
     if (!code) {
       setCodeError('Course code is required');
@@ -72,8 +80,8 @@ export default function JoinCourseScreen({ navigation }: any) {
         text2: `Joined ${result.data?.name || 'course'}`,
       });
       
-      // Navigate back and trigger a refresh on the courses screen
-      navigation.navigate('CourseList');
+      // Navigate back to the course list screen properly
+      navigation.goBack();
       
     } catch (error: any) {
       console.error('Error joining course:', error);
@@ -189,6 +197,15 @@ export default function JoinCourseScreen({ navigation }: any) {
                 )}
               </Button>
 
+              <Button
+                mode="text"
+                onPress={() => navigation.goBack()}
+                disabled={loading}
+                style={styles.cancelButton}
+              >
+                Cancel
+              </Button>
+
               {permission?.granted && (
                 <Button
                   mode="outlined"
@@ -252,6 +269,9 @@ const styles = StyleSheet.create({
     marginTop: 16,
     borderRadius: 24,
     backgroundColor: '#667eea',
+  },
+  cancelButton: {
+    marginTop: 8,
   },
   scanButton: {
     marginTop: 12,

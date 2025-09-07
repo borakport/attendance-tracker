@@ -53,7 +53,7 @@ export default function CourseListScreen({ navigation }: any) {
     setRefreshing(false);
   };
 
-  const filteredCourses = courses.filter(course => {
+  const filteredCourses = courses.filter((course: any) => {
     const matchesSearch = course.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           course.code.toLowerCase().includes(searchQuery.toLowerCase());
     

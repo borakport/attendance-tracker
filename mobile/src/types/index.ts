@@ -62,6 +62,22 @@ export interface CourseSettings {
 }
 
 // Session types
+export interface AttendanceInfo {
+  currentStatus: 'present' | 'late' | 'absent';
+  statusMessage: string;
+  countdownMessage: string;
+  endsInMessage: string;
+  totalSessionTime: string;
+  timeToEnd: number;
+  timeToLate: number;
+  lateThreshold: string;
+  isInLateWindow: boolean;
+  hasAttended: boolean;
+  endTime: string;
+  duration: string;
+  totalDurationMinutes: number;
+}
+
 export interface Session {
   id: string;
   courseId: string;
@@ -79,6 +95,7 @@ export interface Session {
   requireSelfie: boolean;
   startedAt?: string;
   endedAt?: string;
+  attendanceInfo?: AttendanceInfo; // Enhanced with backend-calculated info
 }
 
 // Attendance types

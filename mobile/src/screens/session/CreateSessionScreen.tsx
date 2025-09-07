@@ -19,13 +19,14 @@ import {
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
-import { useAppDispatch } from '@/hooks/redux';
+import { useAppDispatch, useAppSelector } from '@/hooks/redux';
 import apiService from '@/services/api.service';
 import locationService from '@/services/location.service';
 import { format } from 'date-fns';
 
 export default function CreateSessionScreen({ route, navigation }: any) {
   const { courseId } = route.params;
+  const { user } = useAppSelector((state) => state.auth);
   const [loading, setLoading] = useState(false);
   const [gettingLocation, setGettingLocation] = useState(false);
   
@@ -34,6 +35,7 @@ export default function CreateSessionScreen({ route, navigation }: any) {
   const [description, setDescription] = useState('');
   const [startTime, setStartTime] = useState(new Date());
   const [endTime, setEndTime] = useState(new Date(Date.now() + 2 * 60 * 60 * 1000)); // 2 hours from now
+  const [startInMinutes, setStartInMinutes] = useState('5'); // Minutes from now to start
   
   // Location
   const [latitude, setLatitude] = useState('');
@@ -43,7 +45,7 @@ export default function CreateSessionScreen({ route, navigation }: any) {
   
   // Settings
   const [allowLateEntry, setAllowLateEntry] = useState(true);
-  const [lateMinutes, setLateMinutes] = useState('15');
+  const [lateMinutes, setLateMinutes] = useState('5');
   const [requireSelfie, setRequireSelfie] = useState(false);
   
   // Validation errors
@@ -95,6 +97,12 @@ export default function CreateSessionScreen({ route, navigation }: any) {
     if (!name.trim()) newErrors.name = 'Session name is required';
     if (name.length < 3) newErrors.name = 'Session name must be at least 3 characters';
     
+    // Validate startInMinutes
+    const startMinutes = parseInt(startInMinutes);
+    if (isNaN(startMinutes) || startMinutes < 0) {
+      newErrors.startInMinutes = 'Start time must be 0 or more minutes from now';
+    }
+    
     if (endTime <= startTime) newErrors.time = 'End time must be after start time';
     
     if (!latitude || !longitude) {
@@ -122,14 +130,31 @@ export default function CreateSessionScreen({ route, navigation }: any) {
   const handleCreateSession = async () => {
     if (!validateForm()) return;
     
+    if (!user?.id) {
+      Toast.show({
+        type: 'error',
+        text1: 'Authentication Error',
+        text2: 'User not found. Please login again.',
+      });
+      return;
+    }
+    
     setLoading(true);
     try {
+      // Calculate session times based on startInMinutes
+      const now = new Date();
+      const calculatedStartTime = new Date(now.getTime() + parseInt(startInMinutes) * 60 * 1000);
+      // For simplicity, make session 2 hours long by default when using startInMinutes
+      const calculatedEndTime = new Date(calculatedStartTime.getTime() + 2 * 60 * 60 * 1000);
+      
       const sessionData = {
         courseId,
+        instructorId: user.id,
         name: name.trim(),
         description: description.trim(),
-        startTime: startTime.toISOString(),
-        endTime: endTime.toISOString(),
+        startTime: calculatedStartTime.toISOString(),
+        endTime: calculatedEndTime.toISOString(),
+        startInMinutes: parseInt(startInMinutes), // Add the new parameter
         latitude: parseFloat(latitude),
         longitude: parseFloat(longitude),
         radiusMeters: parseInt(radiusMeters),
@@ -137,7 +162,7 @@ export default function CreateSessionScreen({ route, navigation }: any) {
         allowLateEntry,
         lateMinutes: parseInt(lateMinutes),
         requireSelfie,
-        isActive: false,
+        notes: description.trim(),
       };
       
       await apiService.createSession(sessionData);
@@ -198,6 +223,25 @@ export default function CreateSessionScreen({ route, navigation }: any) {
           <Card style={styles.card}>
             <Card.Content>
               <Title style={styles.sectionTitle}>Schedule</Title>
+              
+              <TextInput
+                label="Start in Minutes (from now)"
+                value={startInMinutes}
+                onChangeText={setStartInMinutes}
+                mode="outlined"
+                keyboardType="numeric"
+                error={!!errors.startInMinutes}
+                style={styles.input}
+                placeholder="e.g., 5 for 5 minutes from now"
+              />
+              <HelperText type="error" visible={!!errors.startInMinutes}>
+                {errors.startInMinutes}
+              </HelperText>
+              <HelperText type="info" visible={!errors.startInMinutes}>
+                Session will start {startInMinutes} minutes from now ({
+                  format(new Date(Date.now() + parseInt(startInMinutes || '0') * 60 * 1000), 'MMM dd, h:mm a')
+                }) and end 2 hours later
+              </HelperText>
               
               <List.Item
                 title="Start Time"

@@ -12,7 +12,7 @@ export const createCourseSchema = Joi.object({
     lateEntryMinutes: Joi.number().min(5).max(60).optional(),
     requireSelfie: Joi.boolean().optional(),
     autoEndSession: Joi.boolean().optional(),
-    autoEndMinutes: Joi.number().min(30).max(480).optional(),
+    autoEndMinutes: Joi.number().min(15).max(480).optional(),
   }).optional(),
 });
 
@@ -28,9 +28,22 @@ export const updateCourseSchema = Joi.object({
     lateEntryMinutes: Joi.number().min(5).max(60).optional(),
     requireSelfie: Joi.boolean().optional(),
     autoEndSession: Joi.boolean().optional(),
-    autoEndMinutes: Joi.number().min(30).max(480).optional(),
+    autoEndMinutes: Joi.number().min(15).max(480).optional(),
   }).optional(),
 });
+
+export const editCourseSchema = Joi.object({
+  name: Joi.string().min(3).max(100).optional(),
+  description: Joi.string().max(500).optional(),
+  endDate: Joi.date().iso().optional(),
+}).min(1); // At least one field is required
+
+export const courseSettingsSchema = Joi.object({
+  gpsRadius: Joi.number().min(10).max(500).optional(),
+  allowLateEntry: Joi.boolean().optional(),
+  lateEntryMinutes: Joi.number().min(5).max(60).optional(),
+  requireSelfie: Joi.boolean().optional(),
+}).min(1); // At least one setting is required
 
 export const enrollCourseSchema = Joi.object({
   code: Joi.string().required(),
@@ -43,6 +56,8 @@ export const updateMemberRoleSchema = Joi.object({
 export const courseValidator = {
   create: createCourseSchema,
   update: updateCourseSchema,
+  edit: editCourseSchema,
+  settings: courseSettingsSchema,
   join: enrollCourseSchema,
   addMember: Joi.object({
     userId: Joi.string().uuid().required(),

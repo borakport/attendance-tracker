@@ -17,7 +17,6 @@ import {
   List,
   Surface,
   ActivityIndicator,
-  FAB,
   Divider,
   TextInput,
   Modal,
@@ -34,6 +33,7 @@ import apiService from '@/services/api.service';
 import socketService from '@/services/socket.service';
 import { Course, Session, UserRole, CourseRole } from '@/types';
 import { format, isAfter, isBefore, isToday } from 'date-fns';
+import PasswordVerificationDialog from '@/components/PasswordVerificationDialog';
 
 export default function CourseDetailScreen({ route, navigation }: any) {
   const { courseId } = route.params;
@@ -48,6 +48,7 @@ export default function CourseDetailScreen({ route, navigation }: any) {
   const [settingsExpanded, setSettingsExpanded] = useState(false);
   const [selectedSetting, setSelectedSetting] = useState<'gpsRadius' | 'lateEntry' | 'selfie' | null>(null);
   const [tempSettingValue, setTempSettingValue] = useState('');
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
 
   useEffect(() => {
     loadCourseData();
@@ -126,12 +127,18 @@ export default function CourseDetailScreen({ route, navigation }: any) {
   const loadCourseData = async () => {
     try {
       const courseResponse = await apiService.getCourse(courseId);
-      setCourse(courseResponse.data || null);
+      // Handle the new API response format where course is nested in data.course
+      // Use type assertion to handle the nested structure
+      const responseData = courseResponse.data as any;
+      const courseData = responseData?.course || responseData;
+      setCourse(courseData || null);
       
       // Load member count
       try {
         const membersResponse = await apiService.getCourseMembers(courseId);
-        const memberList = membersResponse.data || [];
+        // Handle new backend response format where members are nested in data.members
+        const responseData = membersResponse.data as any;
+        const memberList = responseData?.members || responseData || [];
         setMemberCount(memberList.length);
       } catch (memberError) {
         console.log('Error loading members count:', memberError);
@@ -150,11 +157,15 @@ export default function CourseDetailScreen({ route, navigation }: any) {
           try {
             const attendanceResponse = await apiService.getSessionAttendance(session.id);
             const attendanceList = attendanceResponse.data || [];
+            const present = attendanceList.filter((a: any) => a.status === 'PRESENT').length;
+            const late = attendanceList.filter((a: any) => a.status === 'LATE').length;
+            const absent = Math.max(0, memberCount - present - late); // Ensure absent can't be negative
+            
             stats[session.id] = {
               total: memberCount,
-              present: attendanceList.filter((a: any) => a.status === 'PRESENT').length,
-              late: attendanceList.filter((a: any) => a.status === 'LATE').length,
-              absent: memberCount - attendanceList.length,
+              present,
+              late,
+              absent,
             };
           } catch (error) {
             console.log('Error loading session attendance:', error);
@@ -230,26 +241,30 @@ export default function CourseDetailScreen({ route, navigation }: any) {
         {
           text: 'Leave',
           style: 'destructive',
-          onPress: async () => {
-            try {
-              await apiService.leaveCourse(courseId);
-              Toast.show({
-                type: 'success',
-                text1: 'Success',
-                text2: 'You have left the course',
-              });
-              navigation.goBack();
-            } catch (error) {
-              Toast.show({
-                type: 'error',
-                text1: 'Error',
-                text2: 'Failed to leave course',
-              });
-            }
-          },
+          onPress: () => setShowPasswordDialog(true),
         },
       ]
     );
+  };
+
+  const handlePasswordVerification = async (password: string) => {
+    try {
+      await apiService.leaveCourse(courseId, password);
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'You have left the course',
+      });
+      setShowPasswordDialog(false);
+      navigation.goBack();
+    } catch (error) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to leave course',
+      });
+      throw error; // Re-throw to show error in dialog
+    }
   };
 
   const navigateToSessionDetail = (session: Session) => {
@@ -273,10 +288,34 @@ export default function CourseDetailScreen({ route, navigation }: any) {
     }
   };
 
+  // Helper function to safely parse dates from various formats
+  const safeParseDate = (dateValue: any): Date => {
+    if (!dateValue) return new Date();
+    
+    // If it's already a Date object
+    if (dateValue instanceof Date) {
+      return dateValue;
+    }
+    
+    // If it's a string (ISO format or other)
+    if (typeof dateValue === 'string') {
+      const parsed = new Date(dateValue);
+      return isNaN(parsed.getTime()) ? new Date() : parsed;
+    }
+    
+    // If it's a timestamp number
+    if (typeof dateValue === 'number') {
+      return new Date(dateValue);
+    }
+    
+    // Fallback
+    return new Date();
+  };
+
   const getSessionStatus = (session: Session) => {
     const now = new Date();
-    const startTime = new Date(session.startTime);
-    const endTime = new Date(session.endTime);
+    const startTime = safeParseDate(session.startTime);
+    const endTime = safeParseDate(session.endTime);
     
     if (session.isActive && now >= startTime && now <= endTime) {
       return { label: 'LIVE', color: '#4CAF50' };
@@ -354,9 +393,11 @@ export default function CourseDetailScreen({ route, navigation }: any) {
             <Title style={styles.courseTitle}>{course.name}</Title>
             <Text style={styles.courseCode}>Code: {course.code}</Text>
             <View style={styles.badges}>
-              <Chip style={styles.roleBadge}>
-                {isOwner ? 'Owner' : 'Member'}
-              </Chip>
+              {!isInstructor && (
+                <Chip style={styles.roleBadge}>
+                  {isOwner ? 'Owner' : 'Member'}
+                </Chip>
+              )}
               {course.isActive && (
                 <Chip style={styles.activeBadge}>Active</Chip>
               )}
@@ -426,7 +467,7 @@ export default function CourseDetailScreen({ route, navigation }: any) {
                   <View style={styles.sessionInfo}>
                     <Text style={styles.sessionName}>{session.name}</Text>
                     <Text style={styles.sessionTime}>
-                      Ends at {format(new Date(session.endTime), 'h:mm a')}
+                      Ends at {format(safeParseDate(session.endTime), 'h:mm a')}
                     </Text>
                   </View>
                   
@@ -500,7 +541,7 @@ export default function CourseDetailScreen({ route, navigation }: any) {
                 <List.Item
                   key={session.id}
                   title={session.name}
-                  description={format(new Date(session.startTime), 'MMM dd, h:mm a')}
+                  description={format(safeParseDate(session.startTime), 'MMM dd, h:mm a')}
                   left={props => <List.Icon {...props} icon="clock-outline" />}
                   onPress={() => navigation.navigate('SessionDetail', { sessionId: session.id })}
                 />
@@ -509,76 +550,78 @@ export default function CourseDetailScreen({ route, navigation }: any) {
           </Card>
         )}
 
-        <Card style={styles.card}>
-          <TouchableOpacity onPress={() => setSettingsExpanded(!settingsExpanded)}>
-            <Card.Title
-              title="Settings"
-              left={(props) => <Avatar.Icon {...props} icon="cog" />}
-              right={(props) => (
+        {isOwner && (
+          <Card style={styles.card}>
+            <TouchableOpacity onPress={() => setSettingsExpanded(!settingsExpanded)}>
+              <View style={styles.settingsHeader}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Avatar.Icon size={40} icon="cog" />
+                  <Text style={styles.settingsTitle}>Settings</Text>
+                </View>
                 <IconButton
                   icon={settingsExpanded ? "chevron-up" : "chevron-down"}
                   onPress={() => setSettingsExpanded(!settingsExpanded)}
                 />
-              )}
-            />
-          </TouchableOpacity>
-          {settingsExpanded && (
-            <Card.Content>
-              <List.Item
-                title="GPS Radius"
-                description={`${course.settings?.gpsRadius || 50}m`}
-                left={props => <List.Icon {...props} icon="map-marker-radius" />}
-                right={() => isOwner && (
-                  <IconButton 
-                    icon="pencil" 
-                    size={20}
-                    onPress={() => {
-                      setSelectedSetting('gpsRadius');
-                      setTempSettingValue((course.settings?.gpsRadius || 50).toString());
-                      setSettingsModalVisible(true);
-                    }}
-                  />
-                )}
-              />
-              <Divider />
-              <List.Item
-                title="Late Entry"
-                description={course.settings?.allowLateEntry ? 
-                  `Allowed (${course.settings?.lateEntryMinutes || 15} minutes)` : 
-                  'Not allowed'}
-                left={props => <List.Icon {...props} icon="clock-alert" />}
-                right={() => isOwner && (
-                  <IconButton 
-                    icon="pencil" 
-                    size={20}
-                    onPress={() => {
-                      setSelectedSetting('lateEntry');
-                      setTempSettingValue((course.settings?.lateEntryMinutes || 15).toString());
-                      setSettingsModalVisible(true);
-                    }}
-                  />
-                )}
-              />
-              <Divider />
-              <List.Item
-                title="Selfie Required"
-                description={course.settings?.requireSelfie ? 'Yes' : 'No'}
-                left={props => <List.Icon {...props} icon="camera" />}
-                right={() => isOwner && (
-                  <IconButton 
-                    icon="pencil" 
-                    size={20}
-                    onPress={() => {
-                      setSelectedSetting('selfie');
-                      setTempSettingValue(course.settings?.requireSelfie ? 'true' : 'false');
-                      setSettingsModalVisible(true);
-                    }}
-                  />
-                )}
-              />
-            </Card.Content>
-          )}
-        </Card>
+              </View>
+            </TouchableOpacity>
+            {settingsExpanded && (
+              <Card.Content>
+                <List.Item
+                  title="GPS Radius"
+                  description={`${course.settings?.gpsRadius || 50}m`}
+                  left={props => <List.Icon {...props} icon="map-marker-radius" />}
+                  right={() => (
+                    <IconButton 
+                      icon="pencil" 
+                      size={20}
+                      onPress={() => {
+                        setSelectedSetting('gpsRadius');
+                        setTempSettingValue((course.settings?.gpsRadius || 50).toString());
+                        setSettingsModalVisible(true);
+                      }}
+                    />
+                  )}
+                />
+                <Divider />
+                <List.Item
+                  title="Late Entry"
+                  description={course.settings?.allowLateEntry ? 
+                    `Allowed (${course.settings?.lateEntryMinutes || 15} minutes)` : 
+                    'Not allowed'}
+                  left={props => <List.Icon {...props} icon="clock-alert" />}
+                  right={() => (
+                    <IconButton 
+                      icon="pencil" 
+                      size={20}
+                      onPress={() => {
+                        setSelectedSetting('lateEntry');
+                        setTempSettingValue((course.settings?.lateEntryMinutes || 15).toString());
+                        setSettingsModalVisible(true);
+                      }}
+                    />
+                  )}
+                />
+                <Divider />
+                <List.Item
+                  title="Selfie Required"
+                  description={course.settings?.requireSelfie ? 'Yes' : 'No'}
+                  left={props => <List.Icon {...props} icon="camera" />}
+                  right={() => (
+                    <IconButton 
+                      icon="pencil" 
+                      size={20}
+                      onPress={() => {
+                        setSelectedSetting('selfie');
+                        setTempSettingValue(course.settings?.requireSelfie ? 'true' : 'false');
+                        setSettingsModalVisible(true);
+                      }}
+                    />
+                  )}
+                />
+              </Card.Content>
+            )}
+          </Card>
+        )}
 
         {!isOwner && (
           <View style={styles.actionContainer}>
@@ -593,14 +636,6 @@ export default function CourseDetailScreen({ route, navigation }: any) {
           </View>
         )}
       </ScrollView>
-
-      {isOwner && (
-        <FAB
-          icon="plus"
-          style={styles.fab}
-          onPress={() => navigation.navigate('CreateSession', { courseId })}
-        />
-      )}
 
       <Portal>
         <Modal
@@ -665,6 +700,15 @@ export default function CourseDetailScreen({ route, navigation }: any) {
           </View>
         </Modal>
       </Portal>
+
+      <PasswordVerificationDialog
+        visible={showPasswordDialog}
+        title="Confirm Leave Course"
+        message="Please enter your password to confirm leaving this course."
+        onVerify={handlePasswordVerification}
+        onDismiss={() => setShowPasswordDialog(false)}
+        loading={loading}
+      />
     </SafeAreaView>
   );
 }
@@ -765,13 +809,6 @@ const styles = StyleSheet.create({
   leaveButton: {
     borderColor: '#F44336',
   },
-  fab: {
-    position: 'absolute',
-    margin: 16,
-    right: 0,
-    bottom: 0,
-    backgroundColor: '#667eea',
-  },
   modalContent: {
     backgroundColor: 'white',
     padding: 20,
@@ -792,5 +829,18 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     gap: 10,
     marginTop: 20,
+  },
+  settingsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  settingsTitle: {
+    fontSize: 18,
+    fontWeight: '500',
+    color: '#333',
+    marginLeft: 12,
   },
 });

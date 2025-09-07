@@ -16,6 +16,7 @@ import {
   ActivityIndicator,
   Button,
   IconButton,
+  FAB,
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -45,6 +46,13 @@ export default function SessionsListScreen({ route, navigation }: any) {
     });
     applyFilters();
   }, [sessions, searchQuery, filter]);
+
+  // Load sessions on component mount
+  useEffect(() => {
+    if (!initialSessions || initialSessions.length === 0) {
+      loadSessions();
+    }
+  }, [courseId]);
 
   // Real-time updates setup
   useEffect(() => {
@@ -127,6 +135,30 @@ export default function SessionsListScreen({ route, navigation }: any) {
     connectSocket();
   }, [courseId, isInstructor]);
 
+  // Helper function to safely parse dates from various formats
+  const safeParseDate = (dateValue: any): Date => {
+    if (!dateValue) return new Date();
+    
+    // If it's already a Date object
+    if (dateValue instanceof Date) {
+      return dateValue;
+    }
+    
+    // If it's a string (ISO format or other)
+    if (typeof dateValue === 'string') {
+      const parsed = new Date(dateValue);
+      return isNaN(parsed.getTime()) ? new Date() : parsed;
+    }
+    
+    // If it's a timestamp number
+    if (typeof dateValue === 'number') {
+      return new Date(dateValue);
+    }
+    
+    // Fallback
+    return new Date();
+  };
+
   const loadSessions = async () => {
     try {
       setLoading(true);
@@ -145,11 +177,15 @@ export default function SessionsListScreen({ route, navigation }: any) {
           try {
             const attendanceResponse = await apiService.getSessionAttendance(session.id);
             const attendanceList = attendanceResponse.data || [];
+            const present = attendanceList.filter((a: any) => a.status === 'PRESENT').length;
+            const late = attendanceList.filter((a: any) => a.status === 'LATE').length;
+            const absent = Math.max(0, memberCount - present - late); // Ensure absent can't be negative
+            
             stats[session.id] = {
               total: memberCount,
-              present: attendanceList.filter((a: any) => a.status === 'PRESENT').length,
-              late: attendanceList.filter((a: any) => a.status === 'LATE').length,
-              absent: memberCount - attendanceList.length,
+              present,
+              late,
+              absent,
             };
           } catch (error) {
             console.log('Error loading session attendance:', error);
@@ -181,16 +217,16 @@ export default function SessionsListScreen({ route, navigation }: any) {
     // Apply time filter
     if (filter !== 'all') {
       filtered = filtered.filter(session => {
-        const sessionDate = new Date(session.startTime);
+        const sessionDate = safeParseDate(session.startTime);
         const now = new Date();
         
         switch (filter) {
           case 'active':
-            return session.isActive && now >= new Date(session.startTime) && now <= new Date(session.endTime);
+            return session.isActive && now >= safeParseDate(session.startTime) && now <= safeParseDate(session.endTime);
           case 'upcoming':
-            return now < new Date(session.startTime);
+            return now < safeParseDate(session.startTime);
           case 'past':
-            return now > new Date(session.endTime);
+            return now > safeParseDate(session.endTime);
           case 'today':
             return isToday(sessionDate);
           case 'week':
@@ -358,6 +394,14 @@ export default function SessionsListScreen({ route, navigation }: any) {
           }
         />
       )}
+      
+      {user?.role === UserRole.INSTRUCTOR && (
+        <FAB
+          icon="plus"
+          style={styles.fab}
+          onPress={() => navigation.navigate('CreateSession', { courseId })}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -454,5 +498,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#333',
+  },
+  fab: {
+    position: 'absolute',
+    margin: 16,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#667eea',
   },
 });

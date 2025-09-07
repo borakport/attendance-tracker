@@ -1,379 +1,819 @@
-import { API_CONFIG, APP_CONFIG } from '@/constants';
-import { ApiResponse, PaginatedResponse, LoginCredentials, User } from '@/types';
+import { User, Course, AttendanceRecord } from '@/types';
+import { APP_CONFIG } from '@/constants';
 
-class ApiService {
+// API Configuration
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const AUTH_SERVICE_URL = `${API_BASE_URL}/api/v1/auth`;
+const ATTENDANCE_SERVICE_URL = `${API_BASE_URL}/api/v1`;
+
+// API Response Types
+interface APIResponse<T = any> {
+  success: boolean;
+  message: string;
+  data?: T;
+  error?: string;
+}
+
+interface AuthResponse {
+  user: User;
+  tokens: {
+    accessToken: string;
+    refreshToken: string;
+  };
+}
+
+interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+interface SignupRequest {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  role: 'student' | 'instructor' | 'admin';
+  studentId?: string;
+  employeeId?: string;
+}
+
+// API Client Class
+export class APIClient {
   private baseURL: string;
-  private defaultHeaders: HeadersInit;
+  private timeout: number;
 
   constructor() {
-    this.baseURL = API_CONFIG.BASE_URL;
-    this.defaultHeaders = {
-      'Content-Type': 'application/json',
-    };
+    this.baseURL = API_BASE_URL;
+    this.timeout = 10000;
   }
 
+  // Helper method to get auth token
   private getAuthToken(): string | null {
     if (typeof window === 'undefined') return null;
     return localStorage.getItem(APP_CONFIG.STORAGE_KEYS.TOKEN);
   }
 
-  private getHeaders(includeAuth: boolean = true): HeadersInit {
-    const headers: Record<string, string> = { ...this.defaultHeaders as Record<string, string> };
-    
-    if (includeAuth) {
-      const token = this.getAuthToken();
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
-      }
-    }
-    
-    return headers;
-  }
-
-  private async handleResponse<T>(response: Response): Promise<T> {
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      
-      if (response.status === 401) {
-        // Handle unauthorized - redirect to login
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem(APP_CONFIG.STORAGE_KEYS.USER);
-          localStorage.removeItem(APP_CONFIG.STORAGE_KEYS.TOKEN);
-          window.location.href = '/login';
-        }
-      }
-      
-      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data;
-  }
-
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {},
-    includeAuth: boolean = true
+  // Helper method for unauthenticated API requests
+  private async requestNoAuth<T>(
+    url: string,
+    options: RequestInit = {}
   ): Promise<T> {
-    const url = `${this.baseURL}${endpoint}`;
     const config: RequestInit = {
-      ...options,
       headers: {
-        ...this.getHeaders(includeAuth),
+        'Content-Type': 'application/json',
         ...options.headers,
       },
+      ...options,
     };
 
     try {
       const response = await fetch(url, config);
-      return await this.handleResponse<T>(response);
+      
+      // Handle non-JSON responses
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error(`Invalid response format: ${response.statusText}`);
+      }
+
+      const data = await response.json() as APIResponse<T>;
+
+      if (!response.ok) {
+        throw new Error(data.error || data.message || `HTTP ${response.status}`);
+      }
+
+      if (!data.success) {
+        throw new Error(data.error || data.message || 'Request failed');
+      }
+
+      return data.data as T;
     } catch (error) {
-      console.error(`API request failed: ${endpoint}`, error);
-      throw error;
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Network error occurred');
     }
   }
 
-  // HTTP Methods
-  async get<T>(endpoint: string, includeAuth: boolean = true): Promise<T> {
-    return this.request<T>(endpoint, { method: 'GET' }, includeAuth);
+  // Helper method to handle API requests
+  private async request<T>(
+    url: string,
+    options: RequestInit = {}
+  ): Promise<T> {
+    const token = this.getAuthToken();
+    
+    const config: RequestInit = {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` }),
+        ...options.headers,
+      },
+      ...options,
+    };
+
+    try {
+      const response = await fetch(url, config);
+      
+      // Handle non-JSON responses
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error(`Invalid response format: ${response.statusText}`);
+      }
+
+      const data = await response.json() as APIResponse<T>;
+
+      if (!response.ok) {
+        throw new Error(data.error || data.message || `HTTP ${response.status}`);
+      }
+
+      if (!data.success) {
+        throw new Error(data.error || data.message || 'Request failed');
+      }
+
+      return data.data as T;
+    } catch (error) {
+      if (error instanceof Error) {
+        // Handle specific error cases
+        if (error.message.includes('401')) {
+          // Token expired, redirect to login
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem(APP_CONFIG.STORAGE_KEYS.USER);
+            localStorage.removeItem(APP_CONFIG.STORAGE_KEYS.TOKEN);
+            window.location.href = '/login';
+          }
+        }
+        throw error;
+      }
+      throw new Error('Network error occurred');
+    }
   }
 
-  async post<T>(
-    endpoint: string,
-    data?: any,
-    includeAuth: boolean = true
-  ): Promise<T> {
-    return this.request<T>(
-      endpoint,
-      {
+  // Authentication API methods
+  async login(credentials: LoginRequest): Promise<AuthResponse> {
+    const response = await this.requestNoAuth<AuthResponse>(`${AUTH_SERVICE_URL}/signin`, {
+      method: 'POST',
+      body: JSON.stringify(credentials),
+    });
+    
+    // Store tokens
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(APP_CONFIG.STORAGE_KEYS.TOKEN, response.tokens.accessToken);
+      localStorage.setItem(APP_CONFIG.STORAGE_KEYS.USER, JSON.stringify(response.user));
+    }
+    
+    return response;
+  }
+
+  async signup(data: SignupRequest): Promise<AuthResponse> {
+    return this.requestNoAuth<AuthResponse>(`${AUTH_SERVICE_URL}/signup`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async logout(): Promise<void> {
+    try {
+      await this.request<void>(`${AUTH_SERVICE_URL}/logout`, {
         method: 'POST',
-        body: data ? JSON.stringify(data) : undefined,
-      },
-      includeAuth
-    );
+      });
+    } finally {
+      // Always clear local storage, even if API call fails
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(APP_CONFIG.STORAGE_KEYS.USER);
+        localStorage.removeItem(APP_CONFIG.STORAGE_KEYS.TOKEN);
+      }
+    }
   }
 
-  async put<T>(
-    endpoint: string,
-    data?: any,
-    includeAuth: boolean = true
-  ): Promise<T> {
-    return this.request<T>(
-      endpoint,
-      {
-        method: 'PUT',
-        body: data ? JSON.stringify(data) : undefined,
-      },
-      includeAuth
-    );
+  async refreshToken(): Promise<{ accessToken: string }> {
+    const refreshToken = localStorage.getItem('refreshToken'); // Store refresh token separately
+    return this.request<{ accessToken: string }>(`${AUTH_SERVICE_URL}/refresh-access-token`, {
+      method: 'POST',
+      body: JSON.stringify({ refreshToken }),
+    });
   }
 
-  async patch<T>(
-    endpoint: string,
-    data?: any,
-    includeAuth: boolean = true
-  ): Promise<T> {
-    return this.request<T>(
-      endpoint,
-      {
-        method: 'PATCH',
-        body: data ? JSON.stringify(data) : undefined,
-      },
-      includeAuth
-    );
+  async getProfile(): Promise<User> {
+    return this.request<User>(`${AUTH_SERVICE_URL}/profile`);
   }
 
-  async delete<T>(endpoint: string, includeAuth: boolean = true): Promise<T> {
-    return this.request<T>(endpoint, { method: 'DELETE' }, includeAuth);
+  async updateProfile(data: Partial<User>): Promise<User> {
+    return this.request<User>(`${AUTH_SERVICE_URL}/profile`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
   }
 
-  // Authentication methods
-  async login(credentials: LoginCredentials): Promise<ApiResponse<User>> {
-    return this.post(API_CONFIG.ENDPOINTS.AUTH.LOGIN, credentials, false);
+  async changePassword(data: { currentPassword: string; newPassword: string }): Promise<void> {
+    return this.request<void>(`${AUTH_SERVICE_URL}/change-password`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   }
 
-  async logout(): Promise<ApiResponse> {
-    return this.post(API_CONFIG.ENDPOINTS.AUTH.LOGOUT);
+  async verifyPassword(data: { password: string }): Promise<{ valid: boolean }> {
+    return this.request<{ valid: boolean }>(`${AUTH_SERVICE_URL}/verify-password`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   }
 
-  async refreshToken(): Promise<ApiResponse<{ token: string }>> {
-    return this.post(API_CONFIG.ENDPOINTS.AUTH.REFRESH);
+  async forgotPassword(data: { email: string }): Promise<void> {
+    return this.requestNoAuth<void>(`${AUTH_SERVICE_URL}/forgot-password`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   }
 
-  async verifyToken(): Promise<ApiResponse<User>> {
-    return this.get(API_CONFIG.ENDPOINTS.AUTH.VERIFY);
+  async resetPassword(data: { token: string; newPassword: string }): Promise<void> {
+    return this.requestNoAuth<void>(`${AUTH_SERVICE_URL}/reset-password`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   }
 
-  // User methods
-  async getUsers(params?: {
-    page?: number;
-    limit?: number;
-    search?: string;
-    role?: string;
-  }): Promise<PaginatedResponse<User>> {
-    const searchParams = new URLSearchParams();
-    if (params?.page) searchParams.append('page', params.page.toString());
-    if (params?.limit) searchParams.append('limit', params.limit.toString());
-    if (params?.search) searchParams.append('search', params.search);
-    if (params?.role) searchParams.append('role', params.role);
-
-    const query = searchParams.toString();
-    return this.get(`${API_CONFIG.ENDPOINTS.USERS.LIST}${query ? `?${query}` : ''}`);
+  async verifyEmail(data: { token: string }): Promise<void> {
+    return this.requestNoAuth<void>(`${AUTH_SERVICE_URL}/verify-email`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   }
 
-  async getUserProfile(): Promise<ApiResponse<User>> {
-    return this.get(API_CONFIG.ENDPOINTS.USERS.PROFILE);
+  // Course API methods (Extended)
+  async getMyCourses(): Promise<Course[]> {
+    return this.request<Course[]>(`${ATTENDANCE_SERVICE_URL}/courses/my`);
   }
 
-  async updateUserProfile(data: Partial<User>): Promise<ApiResponse<User>> {
-    return this.put(API_CONFIG.ENDPOINTS.USERS.PROFILE, data);
+  async getCourses(filters?: { search?: string; instructorId?: string }): Promise<Course[]> {
+    const params = new URLSearchParams();
+    if (filters?.search) params.append('search', filters.search);
+    if (filters?.instructorId) params.append('instructorId', filters.instructorId);
+    
+    const queryString = params.toString();
+    const url = `${ATTENDANCE_SERVICE_URL}/courses${queryString ? `?${queryString}` : ''}`;
+    
+    return this.request<Course[]>(url);
   }
 
-  async createUser(userData: {
+  async getCourseById(id: string): Promise<Course> {
+    return this.request<Course>(`${ATTENDANCE_SERVICE_URL}/courses/${id}`);
+  }
+
+  async getCourseByCode(code: string): Promise<Course> {
+    return this.request<Course>(`${ATTENDANCE_SERVICE_URL}/courses/code/${code}`);
+  }
+
+  async createCourse(data: {
+    name: string;
+    description?: string;
+    code?: string;
+    location?: string;
+    schedule?: string;
+    allowLateSubmissions?: boolean;
+    maxLateMinutes?: number;
+    requireGPS?: boolean;
+    gpsRadius?: number;
+    requireSelfie?: boolean;
+  }): Promise<Course> {
+    return this.request<Course>(`${ATTENDANCE_SERVICE_URL}/courses`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateCourse(id: string, data: Partial<Course>): Promise<Course> {
+    return this.request<Course>(`${ATTENDANCE_SERVICE_URL}/courses/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async editCourse(id: string, data: {
+    name?: string;
+    description?: string;
+    location?: string;
+    schedule?: string;
+  }): Promise<Course> {
+    return this.request<Course>(`${ATTENDANCE_SERVICE_URL}/courses/${id}/edit`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateCourseSettings(id: string, data: {
+    allowLateSubmissions?: boolean;
+    maxLateMinutes?: number;
+    requireGPS?: boolean;
+    gpsRadius?: number;
+    requireSelfie?: boolean;
+  }): Promise<Course> {
+    return this.request<Course>(`${ATTENDANCE_SERVICE_URL}/courses/${id}/settings`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteCourse(id: string): Promise<void> {
+    return this.request<void>(`${ATTENDANCE_SERVICE_URL}/courses/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async enrollCourse(data: { courseCode: string }): Promise<void> {
+    return this.request<void>(`${ATTENDANCE_SERVICE_URL}/courses/enroll`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async leaveCourse(id: string): Promise<void> {
+    return this.request<void>(`${ATTENDANCE_SERVICE_URL}/courses/${id}/leave`, {
+      method: 'POST',
+    });
+  }
+
+  async getCourseMembers(courseId: string): Promise<User[]> {
+    return this.request<User[]>(`${ATTENDANCE_SERVICE_URL}/courses/${courseId}/members`);
+  }
+
+  async removeStudentFromCourse(courseId: string, studentId: string): Promise<void> {
+    return this.request<void>(`${ATTENDANCE_SERVICE_URL}/courses/${courseId}/members/${studentId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Session API methods (Extended)
+  async getSessions(filters?: { courseId?: string }): Promise<any[]> {
+    const params = new URLSearchParams();
+    if (filters?.courseId) params.append('courseId', filters.courseId);
+    
+    const queryString = params.toString();
+    const url = `${ATTENDANCE_SERVICE_URL}/sessions${queryString ? `?${queryString}` : ''}`;
+    
+    return this.request<any[]>(url);
+  }
+
+  async getActiveSessions(): Promise<any[]> {
+    return this.request<any[]>(`${ATTENDANCE_SERVICE_URL}/sessions/active`);
+  }
+
+  async getSessionById(id: string): Promise<any> {
+    return this.request<any>(`${ATTENDANCE_SERVICE_URL}/sessions/${id}`);
+  }
+
+  async getSessionsByQRCode(qrCode: string): Promise<any> {
+    return this.request<any>(`${ATTENDANCE_SERVICE_URL}/sessions/qr/${qrCode}`);
+  }
+
+  async getSessionsByCourse(courseId: string): Promise<any[]> {
+    return this.request<any[]>(`${ATTENDANCE_SERVICE_URL}/sessions/course/${courseId}`);
+  }
+
+  async getActiveSessionsByCourse(courseId: string): Promise<any[]> {
+    return this.request<any[]>(`${ATTENDANCE_SERVICE_URL}/sessions/course/${courseId}/active`);
+  }
+
+  async createSession(data: {
+    courseId: string;
+    name?: string;
+    location?: string;
+    latitude?: number;
+    longitude?: number;
+    radius?: number;
+    scheduledStartTime?: string;
+    duration?: number;
+    requireGPS?: boolean;
+    requireSelfie?: boolean;
+  }): Promise<any> {
+    return this.request(`${ATTENDANCE_SERVICE_URL}/sessions`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateSession(id: string, data: any): Promise<any> {
+    return this.request<any>(`${ATTENDANCE_SERVICE_URL}/sessions/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteSession(id: string): Promise<void> {
+    return this.request<void>(`${ATTENDANCE_SERVICE_URL}/sessions/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async startSession(id: string): Promise<void> {
+    return this.request<void>(`${ATTENDANCE_SERVICE_URL}/sessions/${id}/start`, {
+      method: 'POST',
+    });
+  }
+
+  async endSession(sessionId: string): Promise<void> {
+    return this.request<void>(`${ATTENDANCE_SERVICE_URL}/sessions/${sessionId}/end`, {
+      method: 'POST',
+    });
+  }
+
+  async extendSessionForManualAttendance(sessionId: string): Promise<void> {
+    return this.request<void>(`${ATTENDANCE_SERVICE_URL}/sessions/${sessionId}/extend`, {
+      method: 'POST',
+    });
+  }
+
+  // Attendance API methods (Extended)
+  async markAttendance(data: {
+    sessionId: string;
+    qrCode?: string;
+    latitude?: number;
+    longitude?: number;
+    selfieUrl?: string;
+    manualEntry?: boolean;
+  }): Promise<AttendanceRecord> {
+    return this.request<AttendanceRecord>(`${ATTENDANCE_SERVICE_URL}/attendance/mark`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async addManualAttendance(data: {
+    sessionId: string;
+    studentId: string;
+    status: 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED';
+    note?: string;
+  }): Promise<AttendanceRecord> {
+    return this.request<AttendanceRecord>(`${ATTENDANCE_SERVICE_URL}/attendance/manual`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async bulkMarkAttendance(data: {
+    sessionId: string;
+    attendanceRecords: Array<{
+      studentId: string;
+      status: 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED';
+      note?: string;
+    }>;
+  }): Promise<AttendanceRecord[]> {
+    return this.request<AttendanceRecord[]>(`${ATTENDANCE_SERVICE_URL}/attendance/bulk`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getMyAttendance(filters?: {
+    courseId?: string;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<AttendanceRecord[]> {
+    const params = new URLSearchParams();
+    if (filters?.courseId) params.append('courseId', filters.courseId);
+    if (filters?.startDate) params.append('startDate', filters.startDate);
+    if (filters?.endDate) params.append('endDate', filters.endDate);
+    
+    const queryString = params.toString();
+    const url = `${ATTENDANCE_SERVICE_URL}/attendance/my${queryString ? `?${queryString}` : ''}`;
+    
+    return this.request<AttendanceRecord[]>(url);
+  }
+
+  async getMyAttendanceStats(courseId?: string): Promise<{
+    totalSessions: number;
+    attendedSessions: number;
+    lateCount: number;
+    absentCount: number;
+    attendanceRate: number;
+    recentSessions: AttendanceRecord[];
+  }> {
+    const params = courseId ? `?courseId=${courseId}` : '';
+    return this.request(`${ATTENDANCE_SERVICE_URL}/attendance/my/stats${params}`);
+  }
+
+  async getSessionAttendance(sessionId: string): Promise<AttendanceRecord[]> {
+    return this.request<AttendanceRecord[]>(`${ATTENDANCE_SERVICE_URL}/attendance/session/${sessionId}`);
+  }
+
+  async getSessionAttendanceSummary(sessionId: string): Promise<{
+    totalStudents: number;
+    presentCount: number;
+    absentCount: number;
+    lateCount: number;
+    attendanceRate: number;
+    attendanceRecords: AttendanceRecord[];
+  }> {
+    return this.request(`${ATTENDANCE_SERVICE_URL}/attendance/session/${sessionId}/summary`);
+  }
+
+  async updateAttendance(attendanceId: string, data: {
+    status: 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED';
+    note?: string;
+    markedAt?: string;
+  }): Promise<AttendanceRecord> {
+    return this.request<AttendanceRecord>(`${ATTENDANCE_SERVICE_URL}/attendance/${attendanceId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteAttendance(attendanceId: string): Promise<void> {
+    return this.request<void>(`${ATTENDANCE_SERVICE_URL}/attendance/${attendanceId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getAttendanceHistory(filters?: {
+    courseId?: string;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<AttendanceRecord[]> {
+    const params = new URLSearchParams();
+    if (filters?.courseId) params.append('courseId', filters.courseId);
+    if (filters?.startDate) params.append('startDate', filters.startDate);
+    if (filters?.endDate) params.append('endDate', filters.endDate);
+    
+    const queryString = params.toString();
+    const url = `${ATTENDANCE_SERVICE_URL}/attendance${queryString ? `?${queryString}` : ''}`;
+    
+    return this.request<AttendanceRecord[]>(url);
+  }
+
+  async getAttendanceStats(courseId?: string): Promise<{
+    totalSessions: number;
+    attendedSessions: number;
+    attendanceRate: number;
+    recentSessions: AttendanceRecord[];
+  }> {
+    const params = courseId ? `?courseId=${courseId}` : '';
+    return this.request(`${ATTENDANCE_SERVICE_URL}/attendance/stats${params}`);
+  }
+
+  // Dashboard/Statistics API methods
+  async getDashboardStats(): Promise<{
+    totalUsers: number;
+    totalCourses: number;
+    totalStudents: number;
+    totalInstructors: number;
+    recentActivities: Array<{
+      id: string;
+      action: string;
+      user: string;
+      time: string;
+      type: 'user' | 'course' | 'attendance' | 'system';
+    }>;
+  }> {
+    // This would be implemented in a stats service
+    return this.request(`${ATTENDANCE_SERVICE_URL}/stats/dashboard`);
+  }
+
+  // Admin API methods - Auth Service
+  async getAdminUsers(filters?: { role?: string; search?: string }): Promise<User[]> {
+    const params = new URLSearchParams();
+    if (filters?.role) params.append('role', filters.role);
+    if (filters?.search) params.append('search', filters.search);
+    
+    const queryString = params.toString();
+    const url = `${AUTH_SERVICE_URL}/admin/users${queryString ? `?${queryString}` : ''}`;
+    
+    return this.request<User[]>(url);
+  }
+
+  async getAdminUserStats(): Promise<{
+    totalUsers: number;
+    totalStudents: number;
+    totalInstructors: number;
+    totalAdmins: number;
+    recentlyRegistered: User[];
+  }> {
+    return this.request(`${AUTH_SERVICE_URL}/admin/users/stats`);
+  }
+
+  async createAdminUser(data: {
     email: string;
     password: string;
     firstName: string;
     lastName: string;
-    role: string;
+    role: 'ADMIN' | 'INSTRUCTOR' | 'STUDENT';
+    studentId?: string;
     phoneNumber?: string;
-  }): Promise<ApiResponse<User>> {
-    return this.post(API_CONFIG.ENDPOINTS.USERS.CREATE, userData);
+  }): Promise<User> {
+    return this.request<User>(`${AUTH_SERVICE_URL}/admin/users`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   }
 
-  async updateUser(userId: string, userData: Partial<User>): Promise<ApiResponse<User>> {
-    return this.put(API_CONFIG.ENDPOINTS.USERS.UPDATE.replace(':id', userId), userData);
-  }
-
-  async deleteUser(userId: string): Promise<ApiResponse> {
-    return this.delete(API_CONFIG.ENDPOINTS.USERS.DELETE.replace(':id', userId));
-  }
-
-  // Course methods
-  async getCourses(params?: {
-    page?: number;
-    limit?: number;
-    search?: string;
-    instructorId?: string;
-  }): Promise<PaginatedResponse<any>> {
-    const searchParams = new URLSearchParams();
-    if (params?.page) searchParams.append('page', params.page.toString());
-    if (params?.limit) searchParams.append('limit', params.limit.toString());
-    if (params?.search) searchParams.append('search', params.search);
-    if (params?.instructorId) searchParams.append('instructorId', params.instructorId);
-
-    const query = searchParams.toString();
-    return this.get(`${API_CONFIG.ENDPOINTS.COURSES.LIST}${query ? `?${query}` : ''}`);
-  }
-
-  async createCourse(data: any): Promise<ApiResponse<any>> {
-    return this.post(API_CONFIG.ENDPOINTS.COURSES.CREATE, data);
-  }
-
-  async updateCourse(id: string, data: any): Promise<ApiResponse<any>> {
-    return this.put(API_CONFIG.ENDPOINTS.COURSES.UPDATE.replace(':id', id), data);
-  }
-
-  async deleteCourse(id: string): Promise<ApiResponse> {
-    return this.delete(API_CONFIG.ENDPOINTS.COURSES.DELETE.replace(':id', id));
-  }
-
-  async getCourseMembers(courseId: string): Promise<ApiResponse<User[]>> {
-    return this.get(`/courses/${courseId}/members`);
-  }
-
-  async addCourseMembers(courseId: string, userIds: string[]): Promise<ApiResponse> {
-    return this.post(`/courses/${courseId}/members`, { userIds });
-  }
-
-  // Session Management  
-  async getSessions(params?: { 
-    courseId?: string; 
-    page?: number; 
-    limit?: number;
+  async updateAdminUser(userId: string, data: {
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    role?: 'ADMIN' | 'INSTRUCTOR' | 'STUDENT';
+    studentId?: string;
+    phoneNumber?: string;
     isActive?: boolean;
-  }): Promise<PaginatedResponse<any>> {
-    const searchParams = new URLSearchParams();
-    if (params?.courseId) searchParams.append('courseId', params.courseId);
-    if (params?.page) searchParams.append('page', params.page.toString());
-    if (params?.limit) searchParams.append('limit', params.limit.toString());
-    if (params?.isActive !== undefined) searchParams.append('isActive', params.isActive.toString());
+  }): Promise<User> {
+    return this.request<User>(`${AUTH_SERVICE_URL}/admin/users/${userId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteAdminUser(userId: string): Promise<void> {
+    return this.request<void>(`${AUTH_SERVICE_URL}/admin/users/${userId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Admin API methods - Attendance Service
+  async getAdminDashboardStats(): Promise<{
+    totalCourses: number;
+    totalSessions: number;
+    totalAttendanceRecords: number;
+    averageAttendanceRate: number;
+    recentActivities: Array<{
+      id: string;
+      action: string;
+      user: string;
+      time: string;
+      type: 'course' | 'session' | 'attendance';
+    }>;
+  }> {
+    return this.request(`${ATTENDANCE_SERVICE_URL}/admin/dashboard/stats`);
+  }
+
+  async getAdminCourses(filters?: { search?: string; instructorId?: string }): Promise<Course[]> {
+    const params = new URLSearchParams();
+    if (filters?.search) params.append('search', filters.search);
+    if (filters?.instructorId) params.append('instructorId', filters.instructorId);
     
-    return this.get(`/sessions${searchParams.toString() ? `?${searchParams}` : ''}`);
+    const queryString = params.toString();
+    const url = `${ATTENDANCE_SERVICE_URL}/admin/courses${queryString ? `?${queryString}` : ''}`;
+    
+    return this.request<Course[]>(url);
   }
 
-  async createSession(sessionData: {
-    courseId: string;
-    name: string;
-    description?: string;
-    startTime: string;
-    endTime: string;
-    latitude: number;
-    longitude: number;
-    radiusMeters?: number;
-    locationName?: string;
-  }): Promise<ApiResponse<any>> {
-    return this.post('/sessions', sessionData);
+  async getAdminSessions(filters?: { courseId?: string; status?: string }): Promise<any[]> {
+    const params = new URLSearchParams();
+    if (filters?.courseId) params.append('courseId', filters.courseId);
+    if (filters?.status) params.append('status', filters.status);
+    
+    const queryString = params.toString();
+    const url = `${ATTENDANCE_SERVICE_URL}/admin/sessions${queryString ? `?${queryString}` : ''}`;
+    
+    return this.request<any[]>(url);
   }
 
-  async updateSession(sessionId: string, sessionData: Partial<any>): Promise<ApiResponse<any>> {
-    return this.put(`/sessions/${sessionId}`, sessionData);
-  }
-
-  async deleteSession(sessionId: string): Promise<ApiResponse> {
-    return this.delete(`/sessions/${sessionId}`);
-  }
-
-  // Attendance methods
-  async getAttendance(params?: {
-    page?: number;
-    limit?: number;
-    courseId?: string;
+  async getAdminAttendanceRecords(filters?: { 
+    courseId?: string; 
+    sessionId?: string; 
     studentId?: string;
     startDate?: string;
     endDate?: string;
-  }): Promise<PaginatedResponse<any>> {
-    const searchParams = new URLSearchParams();
-    if (params?.page) searchParams.append('page', params.page.toString());
-    if (params?.limit) searchParams.append('limit', params.limit.toString());
-    if (params?.courseId) searchParams.append('courseId', params.courseId);
-    if (params?.studentId) searchParams.append('studentId', params.studentId);
-    if (params?.startDate) searchParams.append('startDate', params.startDate);
-    if (params?.endDate) searchParams.append('endDate', params.endDate);
-
-    const query = searchParams.toString();
-    return this.get(`${API_CONFIG.ENDPOINTS.ATTENDANCE.LIST}${query ? `?${query}` : ''}`);
-  }
-
-  async markAttendance(data: {
-    courseId: string;
-    studentIds: string[];
-    status: string;
-    notes?: string;
-  }): Promise<ApiResponse> {
-    return this.post(API_CONFIG.ENDPOINTS.ATTENDANCE.MARK, data);
-  }
-
-  async getAttendanceReports(params: {
-    courseId?: string;
-    startDate: string;
-    endDate: string;
-  }): Promise<ApiResponse<any>> {
-    const searchParams = new URLSearchParams();
-    if (params.courseId) searchParams.append('courseId', params.courseId);
-    searchParams.append('startDate', params.startDate);
-    searchParams.append('endDate', params.endDate);
-
-    return this.get(`${API_CONFIG.ENDPOINTS.ATTENDANCE.REPORTS}?${searchParams.toString()}`);
-  }
-
-  async updateAttendance(attendanceId: string, data: {
-    status?: string;
-    notes?: string;
-    verifiedBy?: string;
-  }): Promise<ApiResponse<any>> {
-    return this.put(`/attendances/${attendanceId}`, data);
-  }
-
-  // Reports and Analytics
-  async getAttendanceStats(params?: {
-    courseId?: string;
-    userId?: string;
-    startDate?: string;
-    endDate?: string;
-  }): Promise<ApiResponse<any>> {
-    const searchParams = new URLSearchParams();
-    if (params?.courseId) searchParams.append('courseId', params.courseId);
-    if (params?.userId) searchParams.append('userId', params.userId);
-    if (params?.startDate) searchParams.append('startDate', params.startDate);
-    if (params?.endDate) searchParams.append('endDate', params.endDate);
+  }): Promise<AttendanceRecord[]> {
+    const params = new URLSearchParams();
+    if (filters?.courseId) params.append('courseId', filters.courseId);
+    if (filters?.sessionId) params.append('sessionId', filters.sessionId);
+    if (filters?.studentId) params.append('studentId', filters.studentId);
+    if (filters?.startDate) params.append('startDate', filters.startDate);
+    if (filters?.endDate) params.append('endDate', filters.endDate);
     
-    return this.get(`/reports/attendance-stats${searchParams.toString() ? `?${searchParams}` : ''}`);
-  }
-
-  async generateReport(reportType: string, params: any): Promise<ApiResponse<any>> {
-    return this.post('/reports/generate', { reportType, params });
-  }
-
-  // System Logs
-  async getSystemLogs(params?: {
-    userId?: string;
-    action?: string;
-    entity?: string;
-    page?: number;
-    limit?: number;
-  }): Promise<PaginatedResponse<any>> {
-    const searchParams = new URLSearchParams();
-    if (params?.userId) searchParams.append('userId', params.userId);
-    if (params?.action) searchParams.append('action', params.action);
-    if (params?.entity) searchParams.append('entity', params.entity);
-    if (params?.page) searchParams.append('page', params.page.toString());
-    if (params?.limit) searchParams.append('limit', params.limit.toString());
+    const queryString = params.toString();
+    const url = `${ATTENDANCE_SERVICE_URL}/admin/attendance${queryString ? `?${queryString}` : ''}`;
     
-    return this.get(`/system-logs${searchParams.toString() ? `?${searchParams}` : ''}`);
-  }
-
-  // File upload method
-  async uploadFile(file: File, endpoint: string): Promise<ApiResponse<{ url: string }>> {
-    const formData = new FormData();
-    formData.append('file', file);
-
-    return this.request<ApiResponse<{ url: string }>>(
-      endpoint,
-      {
-        method: 'POST',
-        body: formData,
-        headers: {
-          // Don't set Content-Type for FormData - let browser set it
-          Authorization: `Bearer ${this.getAuthToken()}`,
-        },
-      },
-      false
-    );
+    return this.request<AttendanceRecord[]>(url);
   }
 }
 
 // Export singleton instance
-export const apiService = new ApiService();
+export const apiClient = new APIClient();
 
-// Export class for testing or custom instances
-export { ApiService };
+// Export helper functions for common operations
+export const authAPI = {
+  login: (credentials: LoginRequest) => apiClient.login(credentials),
+  signup: (data: SignupRequest) => apiClient.signup(data),
+  logout: () => apiClient.logout(),
+  getProfile: () => apiClient.getProfile(),
+  updateProfile: (data: Partial<User>) => apiClient.updateProfile(data),
+  changePassword: (data: { currentPassword: string; newPassword: string }) => 
+    apiClient.changePassword(data),
+  verifyPassword: (data: { password: string }) => apiClient.verifyPassword(data),
+  forgotPassword: (data: { email: string }) => apiClient.forgotPassword(data),
+  resetPassword: (data: { token: string; newPassword: string }) => apiClient.resetPassword(data),
+  verifyEmail: (data: { token: string }) => apiClient.verifyEmail(data),
+  refreshToken: () => apiClient.refreshToken(),
+};
+
+export const courseAPI = {
+  getAll: (filters?: { search?: string; instructorId?: string }) => apiClient.getCourses(filters),
+  getMy: () => apiClient.getMyCourses(),
+  getById: (id: string) => apiClient.getCourseById(id),
+  getByCode: (code: string) => apiClient.getCourseByCode(code),
+  create: (data: { 
+    name: string; 
+    description?: string;
+    code?: string;
+    location?: string;
+    schedule?: string;
+    allowLateSubmissions?: boolean;
+    maxLateMinutes?: number;
+    requireGPS?: boolean;
+    gpsRadius?: number;
+    requireSelfie?: boolean;
+  }) => apiClient.createCourse(data),
+  update: (id: string, data: Partial<Course>) => apiClient.updateCourse(id, data),
+  edit: (id: string, data: { name?: string; description?: string; location?: string; schedule?: string }) => 
+    apiClient.editCourse(id, data),
+  updateSettings: (id: string, data: any) => apiClient.updateCourseSettings(id, data),
+  delete: (id: string) => apiClient.deleteCourse(id),
+  enroll: (data: { courseCode: string }) => apiClient.enrollCourse(data),
+  leave: (id: string) => apiClient.leaveCourse(id),
+  getMembers: (courseId: string) => apiClient.getCourseMembers(courseId),
+  removeStudent: (courseId: string, studentId: string) => 
+    apiClient.removeStudentFromCourse(courseId, studentId),
+};
+
+export const attendanceAPI = {
+  mark: (data: { 
+    sessionId: string; 
+    qrCode?: string;
+    latitude?: number; 
+    longitude?: number; 
+    selfieUrl?: string;
+    manualEntry?: boolean;
+  }) => apiClient.markAttendance(data),
+  addManual: (data: any) => apiClient.addManualAttendance(data),
+  bulkMark: (data: any) => apiClient.bulkMarkAttendance(data),
+  getMy: (filters?: { courseId?: string; startDate?: string; endDate?: string }) => 
+    apiClient.getMyAttendance(filters),
+  getMyStats: (courseId?: string) => apiClient.getMyAttendanceStats(courseId),
+  getSessionAttendance: (sessionId: string) => apiClient.getSessionAttendance(sessionId),
+  getSessionSummary: (sessionId: string) => apiClient.getSessionAttendanceSummary(sessionId),
+  update: (attendanceId: string, data: any) => apiClient.updateAttendance(attendanceId, data),
+  delete: (attendanceId: string) => apiClient.deleteAttendance(attendanceId),
+  getHistory: (filters?: { courseId?: string; startDate?: string; endDate?: string }) => 
+    apiClient.getAttendanceHistory(filters),
+  getStats: (courseId?: string) => apiClient.getAttendanceStats(courseId),
+};
+
+export const sessionAPI = {
+  getAll: (filters?: { courseId?: string }) => apiClient.getSessions(filters),
+  getActive: () => apiClient.getActiveSessions(),
+  getById: (id: string) => apiClient.getSessionById(id),
+  getByQR: (qrCode: string) => apiClient.getSessionsByQRCode(qrCode),
+  getByCourse: (courseId: string) => apiClient.getSessionsByCourse(courseId),
+  getActiveByCourse: (courseId: string) => apiClient.getActiveSessionsByCourse(courseId),
+  create: (data: { 
+    courseId: string;
+    name?: string;
+    location?: string; 
+    latitude?: number; 
+    longitude?: number; 
+    radius?: number;
+    scheduledStartTime?: string;
+    duration?: number;
+    requireGPS?: boolean;
+    requireSelfie?: boolean;
+  }) => apiClient.createSession(data),
+  update: (id: string, data: any) => apiClient.updateSession(id, data),
+  delete: (id: string) => apiClient.deleteSession(id),
+  start: (id: string) => apiClient.startSession(id),
+  end: (sessionId: string) => apiClient.endSession(sessionId),
+  extend: (sessionId: string) => apiClient.extendSessionForManualAttendance(sessionId),
+};
+
+export const adminAPI = {
+  // User management (Auth Service)
+  getUsers: (filters?: { role?: string; search?: string }) => apiClient.getAdminUsers(filters),
+  getUserStats: () => apiClient.getAdminUserStats(),
+  createUser: (data: {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    role: 'ADMIN' | 'INSTRUCTOR' | 'STUDENT';
+    studentId?: string;
+    phoneNumber?: string;
+  }) => apiClient.createAdminUser(data),
+  updateUser: (userId: string, data: {
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    role?: 'ADMIN' | 'INSTRUCTOR' | 'STUDENT';
+    studentId?: string;
+    phoneNumber?: string;
+    isActive?: boolean;
+  }) => apiClient.updateAdminUser(userId, data),
+  deleteUser: (userId: string) => apiClient.deleteAdminUser(userId),
+  
+  // Dashboard and statistics (Attendance Service)
+  getDashboardStats: () => apiClient.getAdminDashboardStats(),
+  getCourses: (filters?: { search?: string; instructorId?: string }) => apiClient.getAdminCourses(filters),
+  getSessions: (filters?: { courseId?: string; status?: string }) => apiClient.getAdminSessions(filters),
+  getAttendanceRecords: (filters?: { 
+    courseId?: string; 
+    sessionId?: string; 
+    studentId?: string;
+    startDate?: string;
+    endDate?: string;
+  }) => apiClient.getAdminAttendanceRecords(filters),
+};

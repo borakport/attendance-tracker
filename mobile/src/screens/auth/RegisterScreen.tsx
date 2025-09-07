@@ -24,12 +24,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Toast from 'react-native-toast-message';
 import { useAppDispatch, useAppSelector } from '@/hooks/redux';
 import { signUp, clearError } from '@/store/slices/authSlice';
+import apiService from '@/services/api.service';
 
 const { width } = Dimensions.get('window');
 
 export default function RegisterScreen({ navigation }: any) {
   const dispatch = useAppDispatch();
-  const { isLoading, error } = useAppSelector((state) => state.auth);
+  const { error } = useAppSelector((state) => state.auth);
   
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -40,6 +41,7 @@ export default function RegisterScreen({ navigation }: any) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   
   // Error states
   const [firstNameError, setFirstNameError] = useState('');
@@ -152,23 +154,38 @@ export default function RegisterScreen({ navigation }: any) {
       return;
     }
 
+    setIsLoading(true);
     try {
-      await dispatch(signUp({
+      // Call API directly for signup (don't auto-login)
+      const response = await apiService.signUp({
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         email: email.toLowerCase().trim(),
         password,
         role,
-      })).unwrap();
-      
-      Toast.show({
-        type: 'success',
-        text1: 'Account Created!',
-        text2: 'Welcome to GPS Attendance',
-        position: 'top',
       });
+      
+      if (response.success) {
+        Toast.show({
+          type: 'success',
+          text1: 'Account Created!',
+          text2: 'Please check your email to verify your account',
+          position: 'top',
+        });
+        
+        // Navigate to email verification screen
+        navigation.navigate('VerifyEmail', { email: email.toLowerCase().trim() });
+      }
     } catch (error: any) {
       console.error('Registration error:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Registration Failed',
+        text2: error?.response?.data?.message || error?.message || 'Please check your connection and try again',
+        position: 'top',
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 

@@ -29,6 +29,7 @@ export const fetchSessions = createAsyncThunk(
         throw new Error('Course ID is required');
       }
       const response = await apiService.getSessions(courseId);
+      // Handle backend response format - sessions are directly in data for this endpoint
       return response.data;
     } catch (error) {
       return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch sessions');
@@ -41,7 +42,10 @@ export const fetchActiveSessions = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await apiService.getActiveSessions();
-      return response.data;
+      // Handle new backend response format where sessions are nested in data.sessions
+      const responseData = response.data as any;
+      const sessions = responseData?.sessions || responseData || [];
+      return sessions;
     } catch (error) {
       return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch active sessions');
     }

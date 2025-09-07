@@ -1,13 +1,14 @@
 {
   "expo": {
-    "name": "GPS Attendance",
-    "slug": "gps-attendance",
+    "name": "Smart Attendance",
+    "slug": "smart-attendance-2025",
     "scheme": "gpsattendance",
     "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "owner": "borakport",
+    "newArchEnabled": false,
     "platforms": [
       "ios",
       "android"
@@ -44,8 +45,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#667eea"
       },
-      "package": "com.borakport.gpsattendance",
-      "versionCode": 2,
+      "edgeToEdgeEnabled": true,
       "permissions": [
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
@@ -61,48 +61,23 @@
         "android.permission.USE_FINGERPRINT",
         "android.permission.USE_BIOMETRIC",
         "android.permission.RECORD_AUDIO"
-      ]
+      ],
+      "package": "com.borakport.gpsattendance"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-location",
-      "expo-task-manager",
-      "expo-notifications",
-      "expo-camera",
-      "expo-image-picker",
-      "expo-media-library",
-      "expo-secure-store",
-      "expo-local-authentication",
-      "expo-sensors",
-      "expo-background-fetch",
-      "expo-dev-client",
+      "expo-router",
       [
         "expo-build-properties",
         {
           "android": {
-            "compileSdkVersion": 34,
-            "targetSdkVersion": 34,
-            "buildToolsVersion": "34.0.0",
-            "minSdkVersion": 23,
-            "kotlinVersion": "1.9.0",
-            "enableProguardInReleaseBuilds": false,
-            "enableShrinkResourcesInReleaseBuilds": false,
-            "useLegacyPackaging": true
-          },
-          "ios": {
-            "deploymentTarget": "13.4",
-            "useFrameworks": "static"
+            "kotlinVersion": "2.0.21",
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
+            "buildToolsVersion": "35.0.0"
           }
-        }
-      ],
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/notification-icon.png",
-          "color": "#667eea",
-          "defaultChannel": "default"
         }
       ]
     ],
@@ -111,7 +86,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "b4b42705-6fd4-4463-afac-e7980d30efe5"
+        "projectId": "08f91328-2271-4ab1-b799-4786905f4d38"
       }
     }
   }

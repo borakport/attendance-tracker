@@ -1,17 +1,45 @@
+/**
+ * Authentication Redux Slice
+ * 
+ * This slice manages the authentication state for the mobile application using Redux Toolkit.
+ * It handles user authentication, token management, and persistent storage of auth data.
+ * 
+ * Key Features:
+ * - User sign in/sign up with JWT token management
+ * - Persistent storage using AsyncStorage
+ * - Automatic token refresh handling
+ * - User profile management
+ * - Loading and error state management
+ * 
+ * State Management:
+ * - Authentication status tracking
+ * - User profile data storage
+ * - Token pair management (access + refresh)
+ * - Error handling for auth operations
+ */
+
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { User, AuthTokens } from '@/types';
 import ApiService from '@/services/api.service';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Config } from '@/constants/config';
 
+/**
+ * Authentication State Interface
+ * Defines the shape of authentication state in Redux store
+ */
 interface AuthState {
-  user: User | null;
-  tokens: AuthTokens | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  error: string | null;
+  user: User | null;           // Current authenticated user data
+  tokens: AuthTokens | null;   // JWT access and refresh tokens
+  isAuthenticated: boolean;    // Authentication status flag
+  isLoading: boolean;         // Loading state for async operations
+  error: string | null;       // Error message from failed operations
 }
 
+/**
+ * Initial authentication state
+ * All values start as null/false until authentication occurs
+ */
 const initialState: AuthState = {
   user: null,
   tokens: null,
@@ -20,7 +48,19 @@ const initialState: AuthState = {
   error: null,
 };
 
-// Async thunks
+// =====================================
+// ASYNC THUNKS - Asynchronous Actions
+// =====================================
+
+/**
+ * Sign In Async Thunk
+ * 
+ * Handles user authentication with email and password.
+ * Stores authentication tokens and user data in AsyncStorage for persistence.
+ * 
+ * @param credentials - Object containing email and password
+ * @returns Promise resolving to user and tokens data
+ */
 export const signIn = createAsyncThunk(
   'auth/signIn',
   async ({ email, password }: { email: string; password: string }) => {
@@ -28,7 +68,7 @@ export const signIn = createAsyncThunk(
     if (response.success) {
       const { user, tokens } = response.data;
       
-      // Store tokens in AsyncStorage
+      // Store authentication data in device storage for persistence
       await AsyncStorage.setItem(Config.STORAGE_KEYS.AUTH_TOKEN, tokens.accessToken);
       await AsyncStorage.setItem(Config.STORAGE_KEYS.REFRESH_TOKEN, tokens.refreshToken);
       await AsyncStorage.setItem(Config.STORAGE_KEYS.USER_DATA, JSON.stringify(user));
@@ -39,6 +79,15 @@ export const signIn = createAsyncThunk(
   }
 );
 
+/**
+ * Sign Up Async Thunk
+ * 
+ * Handles new user registration and automatic sign in.
+ * Creates user account and immediately authenticates the user.
+ * 
+ * @param userData - User registration data
+ * @returns Promise resolving to user and tokens data
+ */
 export const signUp = createAsyncThunk(
   'auth/signUp',
   async (userData: any) => {
@@ -46,7 +95,7 @@ export const signUp = createAsyncThunk(
     if (response.success) {
       const { user, tokens } = response.data;
       
-      // Store tokens in AsyncStorage
+      // Store authentication data in device storage for persistence
       await AsyncStorage.setItem(Config.STORAGE_KEYS.AUTH_TOKEN, tokens.accessToken);
       await AsyncStorage.setItem(Config.STORAGE_KEYS.REFRESH_TOKEN, tokens.refreshToken);
       await AsyncStorage.setItem(Config.STORAGE_KEYS.USER_DATA, JSON.stringify(user));
@@ -57,10 +106,25 @@ export const signUp = createAsyncThunk(
   }
 );
 
+/**
+ * Sign Out Async Thunk
+ * 
+ * Handles user logout by clearing stored authentication data
+ * and notifying the backend to invalidate tokens.
+ */
 export const signOut = createAsyncThunk(
   'auth/signOut',
   async () => {
+    // Notify backend to invalidate tokens
     await ApiService.signOut();
+    
+    // Clear stored authentication data
+    await AsyncStorage.multiRemove([
+      Config.STORAGE_KEYS.AUTH_TOKEN,
+      Config.STORAGE_KEYS.REFRESH_TOKEN,
+      Config.STORAGE_KEYS.USER_DATA,
+    ]);
+    
     return null;
   }
 );
@@ -127,6 +191,12 @@ const authSlice = createSlice({
       if (state.user) {
         state.user = { ...state.user, ...action.payload };
       }
+    },
+    logout: (state) => {
+      state.user = null;
+      state.tokens = null;
+      state.isAuthenticated = false;
+      state.error = null;
     },
   },
   extraReducers: (builder) => {
@@ -223,5 +293,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearError, updateUser } = authSlice.actions;
+export const { clearError, updateUser, logout } = authSlice.actions;
 export default authSlice.reducer;

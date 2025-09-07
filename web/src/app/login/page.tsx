@@ -1,13 +1,54 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, Lock, Eye, EyeOff, ChevronDown } from 'lucide-react';
-import { DEMO_USERS, ROUTES, APP_CONFIG } from '@/constants';
-import { validateForm, validationSchemas } from '@/utils/validation';
-import { AccessibleInput, AccessibleButton } from '@/components/ui/Accessibility';
+import { User, Eye, EyeOff, ChevronDown } from 'lucide-react';
+import { APP_CONFIG } from '@/constants';
+import { useAuth } from '@/contexts/AuthContext';
+
+// Test users from your backend database (from TEST_DATA.md)
+const TEST_USERS = [
+  {
+    id: 'admin',
+    name: 'Admin User',
+    email: 'admin@attendance.com',
+    password: 'password123',
+    role: 'admin'
+  },
+  {
+    id: 'instructor',
+    name: 'Prof. Anderson',
+    email: 'prof.anderson@university.edu',
+    password: 'password123',
+    role: 'instructor'
+  },
+  {
+    id: 'student',
+    name: 'Alice Smith',
+    email: 'alice.smith@student.edu',
+    password: 'password123',
+    role: 'student'
+  },
+  {
+    id: 'dr-martinez',
+    name: 'Dr. Martinez',
+    email: 'dr.martinez@college.edu',
+    password: 'password123',
+    role: 'instructor'
+  },
+  {
+    id: 'bob-johnson',
+    name: 'Bob Johnson',
+    email: 'bob.johnson@student.edu',
+    password: 'password123',
+    role: 'student'
+  }
+];
 
 export default function LoginPage() {
+  console.log('🔄 LoginPage component rendering/mounting');
+  
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -16,9 +57,17 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [selectedDemoUser, setSelectedDemoUser] = useState('');
+  const [selectedTestUser, setSelectedTestUser] = useState('');
   
   const router = useRouter();
+
+  // Debug: Log component mount
+  useEffect(() => {
+    console.log('🎯 LoginPage component mounted');
+    return () => {
+      console.log('🗑️ LoginPage component unmounting');
+    };
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -28,22 +77,36 @@ export default function LoginPage() {
     }));
   };
 
-  const handleDemoUserSelect = (userId: string) => {
-    const user = DEMO_USERS.find(u => u.id === userId);
+  const handleTestUserSelect = (userId: string) => {
+    const user = TEST_USERS.find(u => u.id === userId);
     if (user) {
       setFormData(prev => ({
         ...prev,
         email: user.email,
         password: user.password
       }));
-      setSelectedDemoUser(userId);
+      setSelectedTestUser(userId);
     }
   };
 
   const handleLogin = async (e: React.FormEvent) => {
+    console.log('🔥 handleLogin called - START');
     e.preventDefault();
+    
+    // Prevent double submission
+    if (loading) {
+      console.log('⚠️ Login already in progress, ignoring duplicate call');
+      return;
+    }
+    
     setLoading(true);
     setError('');
+
+    // Clear any existing tokens to ensure fresh login
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('smart-attendance-user');
+      localStorage.removeItem('smart-attendance-token');
+    }
 
     try {
       // Basic validation
@@ -59,48 +122,18 @@ export default function LoginPage() {
         return;
       }
 
-      // Mock authentication - replace with real API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('🚀 About to call login API...');
+      // Use real API authentication
+      await login(formData.email, formData.password);
+      console.log('✅ Login API call completed');
       
-      // Find user by email (simulating database lookup)
-      const authenticatedUser = DEMO_USERS.find(
-        user => user.email === formData.email && user.password === formData.password
-      );
-
-      if (!authenticatedUser) {
-        setError('Invalid email or password');
-        setLoading(false);
-        return;
-      }
-
-      // Store user data in localStorage (replace with proper auth management)
-      localStorage.setItem(APP_CONFIG.STORAGE_KEYS.USER, JSON.stringify({
-        id: authenticatedUser.id,
-        name: authenticatedUser.name,
-        email: authenticatedUser.email,
-        role: authenticatedUser.role,
-        permissions: authenticatedUser.permissions
-      }));
-      localStorage.setItem(APP_CONFIG.STORAGE_KEYS.TOKEN, 'mock-jwt-token');
-
-      // Redirect based on role from database
-      switch (authenticatedUser.role) {
-        case 'admin':
-          router.push(ROUTES.ADMIN_DASHBOARD);
-          break;
-        case 'instructor':
-          router.push(ROUTES.INSTRUCTOR_DASHBOARD);
-          break;
-        case 'student':
-          router.push(ROUTES.STUDENT_DASHBOARD);
-          break;
-        default:
-          router.push(ROUTES.LOGIN);
-      }
+      // Redirect will be handled by the home page based on user role
+      router.push('/');
     } catch (error) {
-      console.error('Login failed:', error);
-      setError('Login failed. Please try again.');
+      console.error('❌ Login failed:', error);
+      setError(error instanceof Error ? error.message : 'Login failed. Please try again.');
     } finally {
+      console.log('🏁 handleLogin END - setting loading to false');
       setLoading(false);
     }
   };
@@ -117,18 +150,18 @@ export default function LoginPage() {
           <p className="text-gray-600">Sign in to your account</p>
         </div>
 
-        {/* Demo User Selection (Development Only) */}
+        {/* Test User Selection (Development Only) */}
         <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <h3 className="text-sm font-medium text-yellow-800 mb-2">🚧 Development Mode</h3>
-          <p className="text-xs text-yellow-700 mb-3">Quick login with demo users (will be removed in production)</p>
+          <h3 className="text-sm font-medium text-yellow-800 mb-2">🧪 Test Mode</h3>
+          <p className="text-xs text-yellow-700 mb-3">Quick login with test users from your backend database</p>
           <div className="relative">
             <select
-              value={selectedDemoUser}
-              onChange={(e) => handleDemoUserSelect(e.target.value)}
+              value={selectedTestUser}
+              onChange={(e) => handleTestUserSelect(e.target.value)}
               className="w-full px-3 py-2 border border-yellow-300 rounded-md focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-sm bg-white"
             >
-              <option value="">Select a demo user...</option>
-              {DEMO_USERS.map((user) => (
+              <option value="">Select a test user...</option>
+              {TEST_USERS.map((user) => (
                 <option key={user.id} value={user.id}>
                   {user.name} ({user.role}) - {user.email}
                 </option>

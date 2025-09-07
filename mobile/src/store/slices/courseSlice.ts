@@ -82,9 +82,9 @@ export const joinCourse = createAsyncThunk(
 
 export const leaveCourse = createAsyncThunk(
   'course/leaveCourse',
-  async (courseId: string, { rejectWithValue }) => {
+  async ({ courseId, password }: { courseId: string; password: string }, { rejectWithValue }) => {
     try {
-      await apiService.leaveCourse(courseId);
+      await apiService.leaveCourse(courseId, password);
       return courseId;
     } catch (error) {
       return rejectWithValue(error instanceof Error ? error.message : 'Failed to leave course');

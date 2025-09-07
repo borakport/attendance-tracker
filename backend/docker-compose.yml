@@ -29,6 +29,14 @@ services:
     networks:
       - attendance_network
 
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - "1025:1025"   # SMTP server
+      - "8025:8025"   # Web UI
+    networks:
+      - attendance_network
+
 networks:
   attendance_network:
     driver: bridge

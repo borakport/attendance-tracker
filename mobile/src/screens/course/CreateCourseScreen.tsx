@@ -31,7 +31,6 @@ export default function CreateCourseScreen({ navigation }: any) {
   // Form fields
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [code, setCode] = useState('');
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)); // 90 days from now
   const [showStartPicker, setShowStartPicker] = useState(false);
@@ -43,7 +42,7 @@ export default function CreateCourseScreen({ navigation }: any) {
   const [lateEntryMinutes, setLateEntryMinutes] = useState('15');
   const [requireSelfie, setRequireSelfie] = useState(false);
   const [autoEndSession, setAutoEndSession] = useState(true);
-  const [autoEndMinutes, setAutoEndMinutes] = useState('30');
+  const [autoEndMinutes, setAutoEndMinutes] = useState('15');
   
   // Validation errors
   const [errors, setErrors] = useState<any>({});
@@ -54,14 +53,23 @@ export default function CreateCourseScreen({ navigation }: any) {
     if (!name.trim()) newErrors.name = 'Course name is required';
     if (name.length < 3) newErrors.name = 'Course name must be at least 3 characters';
     
-    if (!code.trim()) newErrors.code = 'Course code is required';
-    if (code.length < 6) newErrors.code = 'Course code must be at least 6 characters';
-    
     if (endDate <= startDate) newErrors.date = 'End date must be after start date';
     
     const radius = parseInt(gpsRadius);
     if (isNaN(radius) || radius < 10 || radius > 500) {
       newErrors.gpsRadius = 'GPS radius must be between 10 and 500 meters';
+    }
+    
+    const lateMinutes = parseInt(lateEntryMinutes);
+    if (isNaN(lateMinutes) || lateMinutes < 5 || lateMinutes > 60) {
+      newErrors.lateEntryMinutes = 'Late entry minutes must be between 5 and 60';
+    }
+    
+    if (autoEndSession) {
+      const endMinutes = parseInt(autoEndMinutes);
+      if (isNaN(endMinutes) || endMinutes < 15 || endMinutes > 480) {
+        newErrors.autoEndMinutes = 'Auto end minutes must be between 15 and 480';
+      }
     }
     
     setErrors(newErrors);
@@ -76,18 +84,19 @@ export default function CreateCourseScreen({ navigation }: any) {
       const courseData = {
         name: name.trim(),
         description: description.trim(),
-        code: code.toUpperCase(),
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
         settings: {
-          gpsRadius: parseInt(gpsRadius),
+          gpsRadius: parseInt(gpsRadius) || 50,
           allowLateEntry,
-          lateEntryMinutes: parseInt(lateEntryMinutes),
+          lateEntryMinutes: parseInt(lateEntryMinutes) || 15,
           requireSelfie,
           autoEndSession,
-          autoEndMinutes: parseInt(autoEndMinutes),
+          autoEndMinutes: parseInt(autoEndMinutes) || 15,
         },
       };
+      
+      console.log('Creating course with data:', JSON.stringify(courseData, null, 2));
       
       await apiService.createCourse(courseData);
       
@@ -107,15 +116,6 @@ export default function CreateCourseScreen({ navigation }: any) {
     } finally {
       setLoading(false);
     }
-  };
-
-  const generateCode = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let code = '';
-    for (let i = 0; i < 8; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    setCode(code);
   };
 
   return (
@@ -150,28 +150,6 @@ export default function CreateCourseScreen({ navigation }: any) {
                 numberOfLines={3}
                 style={styles.input}
               />
-              
-              <View style={styles.codeContainer}>
-                <TextInput
-                  label="Course Code"
-                  value={code}
-                  onChangeText={setCode}
-                  mode="outlined"
-                  error={!!errors.code}
-                  style={styles.codeInput}
-                  autoCapitalize="characters"
-                />
-                <Button
-                  mode="outlined"
-                  onPress={generateCode}
-                  style={styles.generateButton}
-                >
-                  Generate
-                </Button>
-              </View>
-              <HelperText type="error" visible={!!errors.code}>
-                {errors.code}
-              </HelperText>
             </Card.Content>
           </Card>
 
@@ -231,14 +209,20 @@ export default function CreateCourseScreen({ navigation }: any) {
               />
               
               {allowLateEntry && (
-                <TextInput
-                  label="Late Entry Minutes"
-                  value={lateEntryMinutes}
-                  onChangeText={setLateEntryMinutes}
-                  mode="outlined"
-                  keyboardType="numeric"
-                  style={styles.input}
-                />
+                <>
+                  <TextInput
+                    label="Late Entry Minutes"
+                    value={lateEntryMinutes}
+                    onChangeText={setLateEntryMinutes}
+                    mode="outlined"
+                    keyboardType="numeric"
+                    error={!!errors.lateEntryMinutes}
+                    style={styles.input}
+                  />
+                  <HelperText type="error" visible={!!errors.lateEntryMinutes}>
+                    {errors.lateEntryMinutes}
+                  </HelperText>
+                </>
               )}
               
               <List.Item
@@ -266,14 +250,20 @@ export default function CreateCourseScreen({ navigation }: any) {
               />
               
               {autoEndSession && (
-                <TextInput
-                  label="Extra Minutes After End Time"
-                  value={autoEndMinutes}
-                  onChangeText={setAutoEndMinutes}
-                  mode="outlined"
-                  keyboardType="numeric"
-                  style={styles.input}
-                />
+                <>
+                  <TextInput
+                    label="Extra Minutes After End Time"
+                    value={autoEndMinutes}
+                    onChangeText={setAutoEndMinutes}
+                    mode="outlined"
+                    keyboardType="numeric"
+                    error={!!errors.autoEndMinutes}
+                    style={styles.input}
+                  />
+                  <HelperText type="error" visible={!!errors.autoEndMinutes}>
+                    {errors.autoEndMinutes}
+                  </HelperText>
+                </>
               )}
             </Card.Content>
           </Card>
@@ -323,17 +313,6 @@ const styles = StyleSheet.create({
   },
   input: {
     marginBottom: 8,
-  },
-  codeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  codeInput: {
-    flex: 1,
-  },
-  generateButton: {
-    marginTop: 8,
   },
   buttonContainer: {
     padding: 16,

@@ -26,41 +26,115 @@ import {
 import { APP_CONFIG, ROUTES } from '@/constants';
 import { User } from '@/types';
 import { DashboardSkeleton } from '@/components/ui/Skeleton';
+import { useAuth } from '@/contexts/AuthContext';
+import { courseAPI, adminAPI } from '@/services/api';
 
 export default function AdminDashboard() {
-  const [user, setUser] = useState<User | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeView, setActiveView] = useState('overview');
   const [isLoading, setIsLoading] = useState(true);
+  const [dashboardData, setDashboardData] = useState({
+    courses: [],
+    totalUsers: 0,
+    totalInstructors: 0,
+    totalStudents: 0,
+    recentActivities: []
+  });
   const router = useRouter();
+  const { user, logout, isAuthenticated } = useAuth();
 
   useEffect(() => {
-    const userData = localStorage.getItem(APP_CONFIG.STORAGE_KEYS.USER);
-    const authToken = localStorage.getItem(APP_CONFIG.STORAGE_KEYS.TOKEN);
-    
-    if (!userData || !authToken) {
+    if (!isAuthenticated || !user) {
       router.push(ROUTES.LOGIN);
       return;
     }
     
-    const parsedUser = JSON.parse(userData);
-    if (parsedUser.role !== 'admin') {
+    if (user.role.toLowerCase() !== 'admin') {
       router.push(ROUTES.LOGIN);
       return;
     }
     
-    setUser(parsedUser);
-    
-    // Simulate loading delay
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-  }, [router]);
+    // Load dashboard data
+    loadDashboardData();
+  }, [router, user, isAuthenticated]);
 
-  const handleLogout = () => {
-    localStorage.removeItem(APP_CONFIG.STORAGE_KEYS.USER);
-    localStorage.removeItem(APP_CONFIG.STORAGE_KEYS.TOKEN);
-    router.push(ROUTES.LOGIN);
+  const loadDashboardData = async () => {
+    try {
+      setIsLoading(true);
+      
+      console.log('🔄 Loading admin dashboard data...');
+      
+      // Fetch data from admin endpoints
+      const [userStats, dashboardStats, courses] = await Promise.all([
+        adminAPI.getUserStats().catch(err => {
+          console.warn('Failed to fetch user stats:', err);
+          return { totalUsers: 0, totalStudents: 0, totalInstructors: 0, totalAdmins: 0, recentlyRegistered: [] };
+        }),
+        adminAPI.getDashboardStats().catch(err => {
+          console.warn('Failed to fetch dashboard stats:', err);
+          return { totalCourses: 0, totalSessions: 0, totalAttendanceRecords: 0, averageAttendanceRate: 0, recentActivities: [] };
+        }),
+        adminAPI.getCourses().catch(err => {
+          console.warn('Failed to fetch courses:', err);
+          return [];
+        })
+      ]);
+
+      console.log('✅ Dashboard data loaded:', { userStats, dashboardStats, coursesCount: courses.length });
+
+      setDashboardData({
+        courses,
+        totalUsers: userStats.totalUsers,
+        totalInstructors: userStats.totalInstructors,
+        totalStudents: userStats.totalStudents,
+        recentActivities: dashboardStats.recentActivities.map(activity => ({
+          action: activity.action,
+          user: activity.user,
+          time: activity.time,
+          type: activity.type
+        }))
+      });
+      
+    } catch (error) {
+      console.error('❌ Failed to load dashboard data:', error);
+      
+      // Fallback to basic data that we can fetch
+      try {
+        const courses = await courseAPI.getAll();
+        setDashboardData({
+          courses,
+          totalUsers: 0,
+          totalInstructors: 0,
+          totalStudents: 0,
+          recentActivities: [
+            { action: 'Dashboard loaded with limited data', user: 'System', time: 'Now', type: 'system' }
+          ]
+        });
+      } catch (fallbackError) {
+        console.error('❌ Fallback data loading also failed:', fallbackError);
+        // Set empty data to prevent crashes
+        setDashboardData({
+          courses: [],
+          totalUsers: 0,
+          totalInstructors: 0,
+          totalStudents: 0,
+          recentActivities: []
+        });
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      router.push(ROUTES.LOGIN);
+    } catch (error) {
+      console.error('Logout failed:', error);
+      // Force redirect even if logout fails
+      router.push(ROUTES.LOGIN);
+    }
   };
 
   if (!user) {
@@ -83,19 +157,13 @@ export default function AdminDashboard() {
   ];
 
   const quickStats = [
-    { title: 'Total Users', value: '1,234', change: '+12%', icon: Users, color: 'blue' },
-    { title: 'Active Courses', value: '89', change: '+5%', icon: BookOpen, color: 'green' },
-    { title: 'Total Instructors', value: '45', change: '+3%', icon: GraduationCap, color: 'purple' },
-    { title: 'System Health', value: '98.5%', change: '+0.2%', icon: TrendingUp, color: 'orange' }
+    { title: 'Total Users', value: dashboardData.totalUsers.toString(), change: '+12%', icon: Users, color: 'blue' },
+    { title: 'Active Courses', value: dashboardData.courses.length.toString(), change: '+5%', icon: BookOpen, color: 'green' },
+    { title: 'Total Instructors', value: dashboardData.totalInstructors.toString(), change: '+3%', icon: GraduationCap, color: 'purple' },
+    { title: 'Total Students', value: dashboardData.totalStudents.toString(), change: '+8%', icon: UserCheck, color: 'orange' }
   ];
 
-  const recentActivities = [
-    { action: 'New instructor registered', user: 'Dr. Sarah Johnson', time: '2 minutes ago', type: 'user' },
-    { action: 'Course "Advanced Mathematics" created', user: 'Prof. Michael Chen', time: '15 minutes ago', type: 'course' },
-    { action: 'System backup completed', user: 'System', time: '1 hour ago', type: 'system' },
-    { action: 'Attendance report generated', user: 'Dr. Emily Davis', time: '2 hours ago', type: 'report' },
-    { action: 'New student enrolled', user: 'John Smith', time: '3 hours ago', type: 'user' }
-  ];
+  const recentActivities = dashboardData.recentActivities;
 
   const systemAlerts = [
     { message: 'Server storage at 85% capacity', severity: 'warning', time: '1 hour ago' },
@@ -136,11 +204,11 @@ export default function AdminDashboard() {
           <div className="flex items-center">
             <div className="h-10 w-10 bg-blue-600 rounded-full flex items-center justify-center">
               <span className="text-white font-medium text-sm">
-                {user.name.split(' ').map(n => n[0]).join('')}
+                {user?.name ? user.name.split(' ').map(n => n[0]).join('') : 'U'}
               </span>
             </div>
             <div className="ml-3">
-              <p className="text-sm font-medium text-gray-900">{user.name}</p>
+              <p className="text-sm font-medium text-gray-900">{user?.name || 'User'}</p>
               <p className="text-xs text-gray-500">System Administrator</p>
             </div>
           </div>

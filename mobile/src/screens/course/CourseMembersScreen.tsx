@@ -66,7 +66,9 @@ export default function CourseMembersScreen({ route, navigation }: any) {
     try {
       setLoading(true);
       const response = await apiService.getCourseMembers(courseId);
-      const memberList = response.data || [];
+      // Handle new backend response format where members are nested in data.members
+      const responseData = response.data as any;
+      const memberList = responseData?.members || responseData || [];
       setMembers(memberList);
     } catch (error) {
       console.error('Error loading members:', error);
@@ -110,12 +112,15 @@ export default function CourseMembersScreen({ route, navigation }: any) {
   };
 
   const filterMembers = () => {
+    // Ensure members is an array before filtering
+    const memberList = Array.isArray(members) ? members : [];
+    
     if (!searchQuery) {
-      setFilteredMembers(members);
+      setFilteredMembers(memberList);
       return;
     }
 
-    const filtered = members.filter(member =>
+    const filtered = memberList.filter(member =>
       member.user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       member.user.email.toLowerCase().includes(searchQuery.toLowerCase())
     );
@@ -190,17 +195,20 @@ export default function CourseMembersScreen({ route, navigation }: any) {
   );
 
   const getStats = () => {
-    const instructors = members.filter(m => 
+    // Ensure members is an array before filtering
+    const memberList = Array.isArray(members) ? members : [];
+    
+    const instructors = memberList.filter(m => 
       m.role.toLowerCase() === 'instructor' || m.role.toLowerCase() === 'teacher'
     ).length;
-    const students = members.filter(m => 
+    const students = memberList.filter(m => 
       m.role.toLowerCase() === 'student'
     ).length;
-    const assistants = members.filter(m => 
+    const assistants = memberList.filter(m => 
       m.role.toLowerCase() === 'assistant'
     ).length;
 
-    return { instructors, students, assistants, total: members.length };
+    return { instructors, students, assistants, total: memberList.length };
   };
 
   if (loading) {

@@ -1,20 +1,54 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { Provider } from 'react-redux';
-import { PersistGate } from 'redux-persist/integration/react';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import * as SplashScreen from 'expo-splash-screen';
-import { store, persistor } from '@/store';
+import * as Linking from 'expo-linking';
+import { store } from '@/store';
 import RootNavigator from '@/navigation/RootNavigator';
+import ErrorBoundary from './src/components/ErrorBoundary';
+import { setNavigationRef, setStoreRef } from '@/services/api.service';
+import { useSystemTheme } from '@/hooks/useSystemTheme';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
 
-export default function App() {
-  const [isReady, setIsReady] = React.useState(false);
+// Deep linking configuration
+const linking = {
+  prefixes: [Linking.createURL('/'), 'gpsattendance://'],
+  config: {
+    screens: {
+      Auth: {
+        path: '/auth',
+        screens: {
+          VerifyEmail: 'verify-email',
+          ResetPassword: 'reset-password',
+          Login: 'login',
+          Register: 'register',
+          ForgotPassword: 'forgot-password',
+        },
+      },
+      Main: 'main',
+    },
+  },
+};
+
+// Themed App Component
+const ThemedApp: React.FC = () => {
+  const { theme, isDarkMode } = useSystemTheme();
+  const [isReady, setIsReady] = useState(false);
+  const navigationRef = useRef(null);
+
+  useEffect(() => {
+    // Set up API service references
+    setStoreRef(store);
+    if (navigationRef.current) {
+      setNavigationRef(navigationRef.current);
+    }
+  }, []);
 
   useEffect(() => {
     async function prepare() {
@@ -40,18 +74,32 @@ export default function App() {
   }
 
   return (
-    <Provider store={store}>
-      <PersistGate loading={null} persistor={persistor}>
-        <SafeAreaProvider>
-          <PaperProvider>
-            <NavigationContainer>
-              <StatusBar style="auto" />
-              <RootNavigator />
-              <Toast />
-            </NavigationContainer>
-          </PaperProvider>
-        </SafeAreaProvider>
-      </PersistGate>
-    </Provider>
+    <SafeAreaProvider>
+      <PaperProvider theme={theme}>
+        <NavigationContainer 
+          ref={navigationRef}
+          linking={linking}
+          onReady={() => {
+            if (navigationRef.current) {
+              setNavigationRef(navigationRef.current);
+            }
+          }}
+        >
+          <StatusBar style={isDarkMode ? "light" : "dark"} />
+          <RootNavigator />
+          <Toast />
+        </NavigationContainer>
+      </PaperProvider>
+    </SafeAreaProvider>
+  );
+};
+
+export default function App() {
+  return (
+    <ErrorBoundary>
+      <Provider store={store}>
+        <ThemedApp />
+      </Provider>
+    </ErrorBoundary>
   );
 }

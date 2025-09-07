@@ -6,20 +6,23 @@ import { useTheme, Badge } from 'react-native-paper';
 import { View } from 'react-native';
 import { useAppSelector } from '@/hooks/redux';
 import { UserRole } from '@/types';
+import { Config } from '@/constants/config';
 
 // Import screens
 import HomeScreen from '@/screens/main/HomeScreen';
 import CourseListScreen from '@/screens/course/CourseListScreen';
-import CourseDetailScreen from '@/screens/course/CourseDetailScreen';
 import SessionsListScreen from '@/screens/course/SessionsListScreen';
 import CourseMembersScreen from '@/screens/course/CourseMembersScreen';
 import SessionDetailScreen from '@/screens/session/SessionDetailScreen';
 import JoinCourseScreen from '@/screens/course/JoinCourseScreen';
 import CreateCourseScreen from '@/screens/course/CreateCourseScreen';
+import EditCourseScreen from '@/screens/course/EditCourseScreen';
+import CourseSettingsScreen from '@/screens/course/CourseSettingsScreen';
 import CreateSessionScreen from '@/screens/session/CreateSessionScreen';
 import MarkAttendanceScreen from '@/screens/attendance/MarkAttendanceScreen';
 import AttendanceScreen from '@/screens/attendance/AttendanceScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
+import { DebugInfo } from '@/components/DebugInfo';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -34,11 +37,6 @@ function CourseStack() {
         name="CourseList" 
         component={CourseListScreen}
         options={{ title: 'My Courses' }}
-      />
-      <Stack.Screen 
-        name="CourseDetail" 
-        component={CourseDetailScreen}
-        options={{ title: 'Course Details' }}
       />
       <Stack.Screen 
         name="SessionsList" 
@@ -66,6 +64,16 @@ function CourseStack() {
             name="CreateCourse" 
             component={CreateCourseScreen}
             options={{ title: 'Create Course' }}
+          />
+          <Stack.Screen 
+            name="EditCourse" 
+            component={EditCourseScreen}
+            options={{ title: 'Edit Course' }}
+          />
+          <Stack.Screen 
+            name="CourseSettings" 
+            component={CourseSettingsScreen}
+            options={{ title: 'Course Settings' }}
           />
           <Stack.Screen 
             name="CreateSession" 
@@ -161,6 +169,18 @@ export default function MainNavigator() {
           ),
         }}
       />
+      {Config.APP.DEBUG && (
+        <Tab.Screen
+          name="Debug"
+          component={DebugInfo}
+          options={{
+            tabBarLabel: 'Debug',
+            tabBarIcon: ({ color, size }) => (
+              <MaterialCommunityIcons name="bug" color={color} size={size} />
+            ),
+          }}
+        />
+      )}
     </Tab.Navigator>
   );
 }

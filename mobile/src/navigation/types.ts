@@ -1,3 +1,5 @@
+import { NavigatorScreenParams } from '@react-navigation/native';
+
 export type RootStackParamList = {
   Welcome: undefined;
   Auth: undefined;
@@ -13,8 +15,8 @@ export type AuthStackParamList = {
 
 export type MainTabParamList = {
   Home: undefined;
-  Courses: undefined;
-  Attendance: undefined;
+  Courses: NavigatorScreenParams<CourseStackParamList> | undefined;
+  Attendance: NavigatorScreenParams<AttendanceStackParamList> | undefined;
   Profile: undefined;
 };
 
@@ -22,6 +24,8 @@ export type CourseStackParamList = {
   CourseList: undefined;
   CourseDetail: { courseId: string };
   CreateCourse: undefined;
+  EditCourse: { course: any };
+  CourseSettings: { course: any };
   JoinCourse: undefined;
   SessionList: { courseId: string };
   SessionDetail: { sessionId: string };

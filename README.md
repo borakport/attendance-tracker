@@ -65,6 +65,12 @@ Comprehensive documentation is available in the `/docs` directory:
 - **[Security Policy](docs/SECURITY.md)** - Security guidelines and reporting
 - **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and solutions
 
+### Mobile App Documentation
+- **[📱 Mobile App Documentation](mobile/docs/README.md)** - Complete mobile app documentation
+- **[🛠️ Mobile Setup Guides](mobile/docs/setup/)** - Installation and development setup
+- **[🚀 Implementation Steps](mobile/docs/implementation/)** - Development milestones
+- **[📦 Mobile Deployment](mobile/docs/deployment/)** - Production deployment guides
+
 ### Quick Links
 - 🚀 **[Project Status](docs/PROJECT_STATUS.md)** - Current progress and roadmap
 - 🧪 **[Test Data](docs/TEST_DATA.md)** - Login credentials and sample data

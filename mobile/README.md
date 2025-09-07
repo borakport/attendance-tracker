@@ -3,7 +3,18 @@
 ## 📱 Overview
 React Native mobile app for GPS-based attendance tracking with real-time updates.
 
-## 🚀 Quick Start
+## � Documentation
+
+All mobile app documentation has been organized in the [`docs/`](./docs/) directory:
+
+- **[📖 Complete Documentation](./docs/README.md)** - Start here for all mobile documentation
+- **[🛠️ Setup Guides](./docs/setup/)** - Installation and development setup
+- **[🚀 Implementation Progress](./docs/implementation/)** - Development milestones and features
+- **[📦 Deployment](./docs/deployment/)** - Production deployment guides
+- **[🔧 Fixes & Updates](./docs/fixes/)** - Bug fixes and improvements
+- **[📋 Main App Documentation](./docs/MOBILE_APP_DOCUMENTATION.md)** - Comprehensive app documentation
+
+## �🚀 Quick Start
 
 ### Prerequisites
 - Node.js 18+
