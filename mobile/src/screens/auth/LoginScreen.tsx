@@ -125,18 +125,6 @@ export default function LoginScreen({ navigation }: any) {
     }
   };
 
-  const fillTestAccount = (type: 'student' | 'instructor') => {
-    if (type === 'student') {
-      setEmail('alice.smith@student.edu');
-      setPassword('password123');
-    } else {
-      setEmail('prof.anderson@university.edu');
-      setPassword('password123');
-    }
-    setEmailError('');
-    setPasswordError('');
-  };
-
   return (
     <LinearGradient
       colors={theme.dark ? ['#0F172A', '#1E293B'] : ['#667eea', '#764ba2']}
@@ -257,36 +245,6 @@ export default function LoginScreen({ navigation }: any) {
                     Sign Up
                   </Button>
                 </View>
-
-                {Config.APP.SHOW_TEST_ACCOUNTS && (
-                  <View style={[styles.testAccounts, { 
-                    backgroundColor: theme.dark ? 'rgba(59, 130, 246, 0.1)' : '#f5f5f5',
-                    borderColor: theme.dark ? 'rgba(59, 130, 246, 0.2)' : 'transparent',
-                    borderWidth: theme.dark ? 1 : 0
-                  }]}>
-                    <Text style={[styles.testTitle, { color: theme.colors.onSurfaceVariant }]}>
-                      🚀 Quick Test Login:
-                    </Text>
-                    <View style={styles.testButtons}>
-                      <Button
-                        mode="outlined"
-                        onPress={() => fillTestAccount('student')}
-                        compact
-                        style={styles.testButton}
-                      >
-                        Student
-                      </Button>
-                      <Button
-                        mode="outlined"
-                        onPress={() => fillTestAccount('instructor')}
-                        compact
-                        style={styles.testButton}
-                      >
-                        Instructor
-                      </Button>
-                    </View>
-                  </View>
-                )}
               </Card.Content>
             </Card>
           </ScrollView>
@@ -374,23 +332,5 @@ const styles = StyleSheet.create({
   },
   linkButton: {
     marginLeft: 5,
-  },
-  testAccounts: {
-    marginTop: 20,
-    padding: 15,
-    borderRadius: 10,
-  },
-  testTitle: {
-    fontSize: 14,
-    marginBottom: 10,
-    textAlign: 'center',
-    fontWeight: '600',
-  },
-  testButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  testButton: {
-    flex: 0.45,
   },
 });
