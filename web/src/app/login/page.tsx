@@ -6,41 +6,24 @@ import { User, Eye, EyeOff, ChevronDown } from 'lucide-react';
 import { APP_CONFIG } from '@/constants';
 import { useAuth } from '@/contexts/AuthContext';
 
-// Test users from your backend database (from TEST_DATA.md)
-const TEST_USERS = [
+// Demo credentials for testing (from seeded database)
+const DEMO_CREDENTIALS = [
   {
-    id: 'admin',
-    name: 'Admin User',
-    email: 'admin@attendance.com',
-    password: 'password123',
+    name: 'System Administrator',
+    email: 'system.admin@gpsattendance.edu',
+    password: 'Admin@2025!Secure',
     role: 'admin'
   },
   {
-    id: 'instructor',
-    name: 'Prof. Anderson',
-    email: 'prof.anderson@university.edu',
-    password: 'password123',
+    name: 'Dr. Emily Chen',
+    email: 'emily.chen@university.edu',
+    password: 'SecurePassword123!',
     role: 'instructor'
   },
   {
-    id: 'student',
-    name: 'Alice Smith',
-    email: 'alice.smith@student.edu',
-    password: 'password123',
-    role: 'student'
-  },
-  {
-    id: 'dr-martinez',
-    name: 'Dr. Martinez',
-    email: 'dr.martinez@college.edu',
-    password: 'password123',
-    role: 'instructor'
-  },
-  {
-    id: 'bob-johnson',
-    name: 'Bob Johnson',
-    email: 'bob.johnson@student.edu',
-    password: 'password123',
+    name: 'Alex Johnson',
+    email: 'alex.johnson@student.edu',
+    password: 'SecurePassword123!',
     role: 'student'
   }
 ];
@@ -78,7 +61,7 @@ export default function LoginPage() {
   };
 
   const handleTestUserSelect = (userId: string) => {
-    const user = TEST_USERS.find(u => u.id === userId);
+    const user = DEMO_CREDENTIALS.find(u => u.email === userId);
     if (user) {
       setFormData(prev => ({
         ...prev,
@@ -161,8 +144,8 @@ export default function LoginPage() {
               className="w-full px-3 py-2 border border-yellow-300 rounded-md focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-sm bg-white"
             >
               <option value="">Select a test user...</option>
-              {TEST_USERS.map((user) => (
-                <option key={user.id} value={user.id}>
+              {DEMO_CREDENTIALS.map((user) => (
+                <option key={user.email} value={user.email}>
                   {user.name} ({user.role}) - {user.email}
                 </option>
               ))}

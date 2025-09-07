@@ -3,8 +3,7 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { User } from '@/types';
 import { APP_CONFIG } from '@/constants';
-import { apiClient } from '@/services/api';
-import { authAPI } from '@/services/api';
+import { apiService } from '@/services/api';
 
 interface AuthState {
   user: User | null;
@@ -87,7 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Validate token by making a test API call
           try {
             console.log('🔄 Validating stored token...');
-            await authAPI.getProfile();
+            await apiService.getProfile();
             console.log('✅ Token is valid, restoring auth state');
             dispatch({ type: 'AUTH_SUCCESS', payload: user });
           } catch (tokenError) {
@@ -119,7 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log('📡 Calling authAPI.login...');
       // Use real API to authenticate
-      const response = await authAPI.login({ email, password });
+      const response = await apiService.login({ email, password });
       console.log('✅ authAPI.login successful, dispatching AUTH_SUCCESS');
       
       // User data and token are already stored by the API client
@@ -135,7 +134,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     try {
       // Call backend to invalidate session
-      await authAPI.logout();
+      await apiService.logout();
     } catch (error) {
       console.error('Logout API error:', error);
     } finally {
@@ -153,7 +152,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshUser = async () => {
     try {
       // Fetch fresh user data from backend
-      const updatedUser = await authAPI.getProfile();
+      const updatedUser = await apiService.getProfile();
       localStorage.setItem(APP_CONFIG.STORAGE_KEYS.USER, JSON.stringify(updatedUser));
       dispatch({ type: 'AUTH_SUCCESS', payload: updatedUser });
     } catch (error) {

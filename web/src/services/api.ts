@@ -1,10 +1,10 @@
 import { User, Course, AttendanceRecord } from '@/types';
 import { APP_CONFIG } from '@/constants';
 
-// API Configuration
+// API Configuration - Updated for backend integration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const AUTH_SERVICE_URL = `${API_BASE_URL}/api/v1/auth`;
-const ATTENDANCE_SERVICE_URL = `${API_BASE_URL}/api/v1`;
+const AUTH_SERVICE_URL = process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || `${API_BASE_URL}/api/v1/auth`;
+const ATTENDANCE_SERVICE_URL = process.env.NEXT_PUBLIC_ATTENDANCE_SERVICE_URL || 'http://localhost:3002/api/v1';
 
 // API Response Types
 interface APIResponse<T = any> {
@@ -32,9 +32,9 @@ interface SignupRequest {
   lastName: string;
   email: string;
   password: string;
-  role: 'student' | 'instructor' | 'admin';
-  studentId?: string;
-  employeeId?: string;
+  confirmPassword: string;
+  phoneNumber?: string;
+  role?: 'ADMIN' | 'INSTRUCTOR' | 'STUDENT';
 }
 
 // API Client Class
@@ -820,5 +820,4 @@ export const adminAPI = {
 
 // Export the main API service
 export const apiService = apiClient;
-export const adminAPI = adminApiService;
 export default apiClient;
