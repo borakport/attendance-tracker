@@ -75,3 +75,111 @@ Comprehensive documentation is available in the `/docs` directory:
 - 🚀 **[Project Status](docs/PROJECT_STATUS.md)** - Current progress and roadmap
 - 🧪 **[Test Data](docs/TEST_DATA.md)** - Login credentials and sample data
 - ⚡ **[Quick Reference](docs/QUICK_REFERENCE.md)** - Common commands and shortcuts
+
+## 🤝 Contributing & Open Source
+
+This project is **100% open source** and welcomes contributions from the community!
+
+### 🌟 Why Contribute?
+- **Learn & Grow:** Work with modern technologies (Node.js, React Native, PostgreSQL, Docker)
+- **Make Impact:** Help educational institutions worldwide track attendance effectively
+- **Build Portfolio:** Contribute to a real-world, production-ready application
+- **Join Community:** Collaborate with experienced developers
+
+### 🛠️ Areas for Contribution
+
+**Backend Development** (Contact: [@borakport](https://github.com/borakport))
+- 🔧 API improvements and new endpoints
+- 🚀 Performance optimizations
+- 🔒 Security enhancements
+- 🧪 Testing and quality assurance
+
+**Web Frontend** (Contact: [@borakport](https://github.com/borakport))
+- 🎨 UI/UX improvements
+- 📊 Dashboard features
+- 📱 Responsive design enhancements
+
+**Mobile Development** (Contact: MON Dina)
+- 📱 iOS/Android optimizations
+- 🗺️ GPS and location improvements  
+- 💾 Offline functionality
+- 🎯 Performance optimizations
+
+**Documentation & Community**
+- 📚 Documentation improvements
+- 🌍 Translation support
+- 🎥 Tutorial creation
+- 🐛 Bug reports and testing
+
+### 🚀 Getting Started
+
+1. **Fork the repository**
+2. **Create a feature branch:** `git checkout -b feature/amazing-feature`
+3. **Make your changes and commit:** `git commit -m 'Add amazing feature'`
+4. **Push to your branch:** `git push origin feature/amazing-feature`
+5. **Open a Pull Request**
+
+### 📖 Development Resources
+
+- **[Contributing Guide](CONTRIBUTING.md)** - Detailed contribution guidelines
+- **[Setup Guide](docs/SETUP.md)** - Development environment setup
+- **[Architecture](docs/ARCHITECTURE.md)** - System design overview
+- **[API Documentation](docs/API.md)** - Complete API reference
+
+### 💬 Community & Support
+
+- **Issues:** Report bugs and request features via [GitHub Issues](https://github.com/borakport/attendance-tracker/issues)
+- **Discussions:** Join community discussions for questions and ideas
+- **Pull Requests:** Contribute code improvements and new features
+
+**We appreciate all contributions, big or small! 🙏**
+
+## 📄 License
+
+This project is **open source** and available under the **MIT License**.
+
+```
+MIT License
+
+Copyright (c) 2025 ORN Borakport (Backend & Web Interface) and MON Dina (Mobile App)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+See the [LICENSE](LICENSE) file for full details.
+
+## � Contributors
+
+This project is a collaborative effort by:
+
+### 🔧 **ORN Borakport** ([@borakport](https://github.com/borakport))
+- **Backend Architecture & Development** - Complete microservices backend with authentication, attendance tracking, and real-time features
+- **Web Interface** - Administrative dashboard and web portal
+- **System Design** - Database schema, API design, and infrastructure setup
+- **DevOps** - Docker containerization, database management, and deployment configuration
+
+### 📱 **MON Dina** 
+- **Mobile Application** - Complete React Native app for iOS and Android
+- **Mobile UI/UX** - User interface design and user experience optimization
+- **Mobile Features** - GPS integration, offline support, and mobile-specific functionality
+- **Cross-platform Development** - Ensuring consistent experience across mobile platforms
+
+---
+
+⭐ **If you find this project useful, please give it a star on GitHub!** ⭐

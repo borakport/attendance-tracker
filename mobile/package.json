@@ -1,7 +1,10 @@
 {
   "name": "gps-attendance-mobile",
   "version": "1.0.0",
+  "description": "Mobile app for GPS Attendance Tracker",
   "main": "node_modules/expo/AppEntry.js",
+  "author": "MON Dina",
+  "license": "MIT",
   "scripts": {
     "start": "expo start --dev-client",
     "android": "expo run:android",

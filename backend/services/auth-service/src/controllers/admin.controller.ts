@@ -400,4 +400,257 @@ export class AdminController {
       next(error);
     }
   }
+
+  /**
+   * Reset user password (admin only)
+   * POST /api/auth/admin/users/:id/reset-password
+   */
+  static async resetUserPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { newPassword } = req.body;
+
+      if (!newPassword || newPassword.length < 6) {
+        const response = createResponse(false, 'Password must be at least 6 characters long');
+        res.status(400).json(response);
+        return;
+      }
+
+      // Check if user exists
+      const user = await prisma.user.findUnique({
+        where: { id }
+      });
+
+      if (!user) {
+        const response = createResponse(false, 'User not found');
+        res.status(404).json(response);
+        return;
+      }
+
+      // Hash new password
+      const hashedPassword = await PasswordUtils.hash(newPassword);
+
+      // Update password
+      await prisma.user.update({
+        where: { id },
+        data: { 
+          password: hashedPassword
+          // Note: User will need to change password on next login via frontend logic
+        }
+      });
+
+      const response = createResponse(true, 'Password reset successfully');
+      res.status(200).json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Toggle user account lock status (admin only)
+   * POST /api/auth/admin/users/:id/toggle-lock
+   */
+  static async toggleUserLock(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+
+      // Check if user exists
+      const user = await prisma.user.findUnique({
+        where: { id }
+      });
+
+      if (!user) {
+        const response = createResponse(false, 'User not found');
+        res.status(404).json(response);
+        return;
+      }
+
+      // Don't allow locking the last admin
+      if (user.role === 'ADMIN' && !user.accountLocked) {
+        const adminCount = await prisma.user.count({
+          where: { 
+            role: 'ADMIN',
+            accountLocked: false
+          }
+        });
+
+        if (adminCount <= 1) {
+          const response = createResponse(false, 'Cannot lock the last active admin user');
+          res.status(400).json(response);
+          return;
+        }
+      }
+
+      // Toggle lock status
+      const updatedUser = await prisma.user.update({
+        where: { id },
+        data: { 
+          accountLocked: !user.accountLocked 
+        },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          accountLocked: true
+        }
+      });
+
+      const action = updatedUser.accountLocked ? 'locked' : 'unlocked';
+      const response = createResponse(true, `User account ${action} successfully`, updatedUser);
+      res.status(200).json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get detailed user activity stats
+   * GET /api/auth/admin/users/:id/activity
+   */
+  static async getUserActivity(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+
+      // Check if user exists
+      const user = await prisma.user.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          role: true,
+          lastLogin: true,
+          createdAt: true
+        }
+      });
+
+      if (!user) {
+        const response = createResponse(false, 'User not found');
+        res.status(404).json(response);
+        return;
+      }
+
+      // For now, return basic user info and placeholder activity data
+      // You can extend this with actual activity tracking from your database
+      const activityData = {
+        user,
+        loginHistory: [],  // Implement login tracking in your auth system
+        recentActions: [], // Implement action logging
+        statistics: {
+          totalLogins: 0,   // Implement login counting
+          averageSessionDuration: 0,
+          lastActivityDate: user.lastLogin,
+          accountAge: Math.floor((Date.now() - user.createdAt.getTime()) / (1000 * 60 * 60 * 24))
+        }
+      };
+
+      const response = createResponse(true, 'User activity retrieved successfully', activityData);
+      res.status(200).json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Export users data (admin only)
+   * GET /api/auth/admin/users/export
+   */
+  static async exportUsers(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { format = 'csv', role, verified, locked } = req.query;
+
+      // Build filter conditions
+      const where: any = {};
+      if (role) where.role = role;
+      if (verified !== undefined) where.emailVerified = verified === 'true';
+      if (locked !== undefined) where.accountLocked = locked === 'true';
+
+      // Get all users matching criteria
+      const users = await prisma.user.findMany({
+        where,
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          phoneNumber: true,
+          role: true,
+          emailVerified: true,
+          accountLocked: true,
+          lastLogin: true,
+          createdAt: true,
+          updatedAt: true
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+
+      if (format === 'csv') {
+        // Generate CSV
+        const csvHeader = 'ID,First Name,Last Name,Email,Phone,Role,Email Verified,Account Locked,Last Login,Created At\n';
+        const csvData = users.map((user: any) => [
+          user.id,
+          user.firstName,
+          user.lastName,
+          user.email,
+          user.phoneNumber || '',
+          user.role,
+          user.emailVerified,
+          user.accountLocked,
+          user.lastLogin?.toISOString() || '',
+          user.createdAt.toISOString()
+        ].join(',')).join('\n');
+
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename=users-export.csv');
+        res.status(200).send(csvHeader + csvData);
+      } else {
+        // JSON format
+        const response = createResponse(true, 'Users exported successfully', {
+          users,
+          exportDate: new Date().toISOString(),
+          totalCount: users.length,
+          filters: { role, verified, locked }
+        });
+        res.status(200).json(response);
+      }
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get user roles and permissions
+   * GET /api/auth/admin/roles
+   */
+  static async getRoles(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const roles = [
+        {
+          value: 'STUDENT',
+          label: 'Student',
+          description: 'Can view and manage their own attendance and courses',
+          permissions: ['view_own_attendance', 'view_own_courses', 'join_courses']
+        },
+        {
+          value: 'INSTRUCTOR',
+          label: 'Instructor',
+          description: 'Can manage courses and track student attendance',
+          permissions: ['manage_courses', 'track_attendance', 'view_student_data', 'manage_sessions']
+        },
+        {
+          value: 'ADMIN',
+          label: 'Administrator',
+          description: 'Full system access and user management',
+          permissions: ['manage_users', 'manage_courses', 'view_all_data', 'system_settings', 'export_data']
+        }
+      ];
+
+      const response = createResponse(true, 'Roles retrieved successfully', roles);
+      res.status(200).json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
 }

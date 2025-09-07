@@ -56,7 +56,6 @@ export class SessionService {
 
       // 2. Validate session times
       let startTime: Date;
-      let endTime: Date;
 
       // If startInMinutes is provided, calculate start time from current time
       if (data.startInMinutes !== undefined) {
@@ -68,7 +67,7 @@ export class SessionService {
         console.log(`  - Using provided start time: ${startTime.toISOString()}`);
       }
 
-      endTime = data.endTime instanceof Date ? data.endTime : new Date(data.endTime);
+      const endTime = data.endTime instanceof Date ? data.endTime : new Date(data.endTime);
       
       const validation = SessionService.validateSessionTimes(startTime, endTime);
       if (!validation.isValid) {

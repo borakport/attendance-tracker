@@ -8,19 +8,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { ApiResponse } from '../types';
 
-// Extend Request interface to include user
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        id: string;
-        email: string;
-        role: string;
-        name: string;
-      };
-    }
-  }
-}
+// Use the global Express interface extension from auth.middleware.ts
 
 /**
  * Creates authorization middleware for specific roles
@@ -53,7 +41,7 @@ export const authorize = (allowedRoles: string[]) => {
 
       // User is authorized, continue to next middleware
       next();
-    } catch (error) {
+    } catch {
       const response: ApiResponse = {
         success: false,
         message: 'Authorization failed',
@@ -94,7 +82,7 @@ export const requireOwnershipOrAdmin = (resourceUserIdParam: string = 'userId') 
       const resourceUserId = req.params[resourceUserIdParam] || req.body[resourceUserIdParam];
       
       // Allow if user is admin or owns the resource
-      if (req.user.role === 'ADMIN' || req.user.id === resourceUserId) {
+      if (req.user.role === 'ADMIN' || req.user.userId === resourceUserId) {
         next();
         return;
       }
@@ -105,7 +93,7 @@ export const requireOwnershipOrAdmin = (resourceUserIdParam: string = 'userId') 
         timestamp: new Date().toISOString()
       };
       res.status(403).json(response);
-    } catch (error) {
+    } catch {
       const response: ApiResponse = {
         success: false,
         message: 'Authorization failed',

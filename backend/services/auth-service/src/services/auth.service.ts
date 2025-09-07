@@ -80,7 +80,7 @@ export class AuthService {
       logger.info(`User registered: ${user.email}`);
 
       // Remove password from response
-      const { password, ...userWithoutPassword } = user;
+      const { password: _, ...userWithoutPassword } = user;
 
       return {
         user: userWithoutPassword,
@@ -137,7 +137,7 @@ export class AuthService {
       logger.info(`User signed in: ${user.email}`);
 
       // Remove password from response
-      const { password, ...userWithoutPassword } = user;
+      const { password: _, ...userWithoutPassword } = user;
 
       return {
         user: userWithoutPassword,
@@ -425,7 +425,7 @@ export class AuthService {
       }
 
       // Remove password from response
-      const { password, ...userWithoutPassword } = user;
+      const { password: _, ...userWithoutPassword } = user;
 
       return userWithoutPassword;
     } catch (error) {
@@ -444,7 +444,7 @@ export class AuthService {
       logger.info(`Profile updated for user: ${updatedUser.email}`);
 
       // Remove password from response
-      const { password, ...userWithoutPassword } = updatedUser;
+      const { password: _, ...userWithoutPassword } = updatedUser;
 
       return userWithoutPassword;
     } catch (error) {

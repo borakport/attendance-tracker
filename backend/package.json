@@ -16,9 +16,11 @@
     "build:attendance": "cd services/attendance-service && npm run build",
     "build:realtime": "cd services/realtime-service && npm run build",
     "test:connection": "cd services/attendance-service && npm run test:realtime",
-    "seed": "cd services/auth-service && npm run seed",
+    "seed": "tsx seed.ts",
+    "seed:old": "cd services/auth-service && npm run seed",
     "migrate": "cd services/auth-service && npx prisma migrate dev",
-    "studio": "cd services/auth-service && npx prisma studio"
+    "studio": "cd services/auth-service && npx prisma studio",
+    "reset-db": "npm run seed"
   },
   "keywords": [
     "gps",
@@ -28,6 +30,20 @@
     "nodejs",
     "typescript"
   ],
-  "author": "borakport",
-  "license": "MIT"
+  "author": "ORN Borakport <borakport@github.com> (https://github.com/borakport)",
+  "license": "MIT",
+  "dependencies": {
+    "@prisma/client": "^6.15.0",
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.6.1",
+    "pg": "^8.16.3",
+    "prisma": "^6.15.0",
+    "redis": "^5.8.2"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "@types/node": "^22.18.1",
+    "tsx": "^4.20.5",
+    "typescript": "^5.6.2"
+  }
 }

@@ -1,301 +1,392 @@
 # Database Documentation
 
-## Database Schema Overview
+This document describes the database schema, operations, and management for the GPS Attendance Tracking System.
 
-The attendance tracking system uses PostgreSQL as the primary database with Prisma ORM for type-safe database access.
+## Database Overview
 
-## Entity Relationship Diagram
+**Database:** PostgreSQL 15  
+**ORM:** Prisma  
+**Connection:** Docker container on port 5432  
+**Database Name:** `gps_attendance_production`
 
-```mermaid
-erDiagram
-    User ||--o{ RefreshToken : has
-    User ||--o{ Course : owns
-    User ||--o{ CourseMember : participates
-    User ||--o{ Attendance : marks
-    User ||--o{ Session : creates
-    Course ||--o{ CourseMember : has
-    Course ||--o{ Session : contains
-    Session ||--o{ Attendance : records
-    
-    User {
-        uuid id PK
-        string email UK
-        string password
-        string firstName
-        string lastName
-        string phoneNumber
-        UserRole role
-        boolean emailVerified
-        boolean accountLocked
-        datetime createdAt
-    }
-    
-    Course {
-        uuid id PK
-        string name
-        string code UK
-        uuid ownerId FK
-        json settings
-        boolean isActive
-        datetime createdAt
-    }
-    
-    Session {
-        uuid id PK
-        uuid courseId FK
-        string name
-        datetime startTime
-        datetime endTime
-        decimal latitude
-        decimal longitude
-        int radiusMeters
-        boolean isActive
-    }
-    
-    Attendance {
-        uuid id PK
-        uuid sessionId FK
-        uuid userId FK
-        datetime markedAt
-        decimal latitude
-        decimal longitude
-        AttendanceStatus status
-        float distanceFromSession
-    }
+## Environment Configuration
+
+The database connection uses hard links to ensure Prisma CLI access:
+
+```bash
+# Windows - Create hard links for Prisma CLI
+cd backend\services\auth-service
+cmd /c "mklink /H .env c:\Data\attendance-tracker\backend\.env"
+
+cd ..\attendance-service
+cmd /c "mklink /H .env c:\Data\attendance-tracker\backend\.env"
 ```
 
-## Tables Description
-
-### Users Table
-Stores all user information including authentication details and profile data.
-
-**Key Fields:**
-- `id`: UUID primary key
-- `email`: Unique email address
-- `password`: Bcrypt hashed password
-- `role`: ADMIN, INSTRUCTOR, or STUDENT
-- `emailVerified`: Email verification status
-- `accountLocked`: Security feature for failed login attempts
-
-**Security Features:**
-- Password hashing with bcrypt (10 rounds)
-- Account locking after 5 failed attempts
-- Email verification tokens
-- Password reset tokens with expiry
-
-### Courses Table
-Contains course information and settings.
-
-**Settings JSON Structure:**
-```json
-{
-  "gpsRadius": 50,
-  "allowLateEntry": true,
-  "lateEntryMinutes": 15,
-  "requireSelfie": false,
-  "autoEndSession": true,
-  "autoEndMinutes": 120
-}
+**Connection String:**
+```env
+DATABASE_URL=postgresql://postgres:AttendanceSecurePassword2025@localhost:5432/gps_attendance_production?schema=public
 ```
 
-### Sessions Table
-Represents individual attendance sessions within a course.
+## Schema Structure
 
-**Key Features:**
-- GPS coordinates for location verification
-- Configurable radius for attendance marking
-- Time-based constraints
-- Optional QR code and access code
+### Core Models
 
-### Attendance Table
-Records individual attendance marks with verification data.
+#### Users Table
+```sql
+Table: users
+- id: UUID (Primary Key)
+- email: String (Unique)
+- password: String (Hashed with bcrypt)
+- firstName: String
+- lastName: String
+- phoneNumber: String?
+- role: UserRole (ADMIN, INSTRUCTOR, STUDENT)
+- emailVerified: Boolean
+- emailVerificationToken: String?
+- twoFactorEnabled: Boolean
+- createdAt: DateTime
+- updatedAt: DateTime
+```
 
-**Tracking Information:**
-- Exact GPS coordinates
-- Distance from session location
-- Device information
-- IP address for security
-- Optional selfie verification
+#### Courses Table
+```sql
+Table: courses
+- id: UUID (Primary Key)
+- name: String
+- description: String?
+- code: String (Unique)
+- ownerId: UUID (Foreign Key -> users.id)
+- settings: JSON
+- isActive: Boolean
+- startDate: DateTime?
+- endDate: DateTime?
+- createdAt: DateTime
+- updatedAt: DateTime
+```
 
-## Indexes
+#### Sessions Table
+```sql
+Table: sessions
+- id: UUID (Primary Key)
+- courseId: UUID (Foreign Key -> courses.id)
+- createdById: UUID (Foreign Key -> users.id)
+- name: String
+- description: String?
+- startTime: DateTime
+- endTime: DateTime
+- latitude: Decimal(10,8)
+- longitude: Decimal(11,8)
+- radiusMeters: Integer (default: 50)
+- locationName: String?
+- isActive: Boolean
+- allowLateEntry: Boolean
+- lateMinutes: Integer (default: 15)
+- requireSelfie: Boolean
+- qrCode: String? (Unique)
+- notes: String?
+- createdAt: DateTime
+- updatedAt: DateTime
+```
+
+#### Attendances Table
+```sql
+Table: attendances
+- id: UUID (Primary Key)
+- sessionId: UUID (Foreign Key -> sessions.id)
+- userId: UUID (Foreign Key -> users.id)
+- markedAt: DateTime
+- latitude: Decimal(10,8)
+- longitude: Decimal(11,8)
+- status: AttendanceStatus (PRESENT, LATE, ABSENT)
+- distanceFromSession: Float
+- selfieUrl: String?
+- deviceInfo: JSON?
+- ipAddress: String?
+- notes: String?
+- verifiedBy: String?
+- createdAt: DateTime
+- updatedAt: DateTime
+```
+
+#### Course Members Table
+```sql
+Table: course_members
+- id: UUID (Primary Key)
+- courseId: UUID (Foreign Key -> courses.id)
+- userId: UUID (Foreign Key -> users.id)
+- role: CourseRole (OWNER, PARTICIPANT, MODERATOR)
+- joinedAt: DateTime
+- updatedAt: DateTime
+- UNIQUE(courseId, userId)
+```
+
+#### Refresh Tokens Table
+```sql
+Table: refresh_tokens
+- id: UUID (Primary Key)
+- token: String (Unique)
+- userId: UUID (Foreign Key -> users.id)
+- expiresAt: DateTime
+- createdAt: DateTime
+```
+
+#### System Logs Table
+```sql
+Table: system_logs
+- id: UUID (Primary Key)
+- userId: String?
+- action: String
+- entity: String
+- entityId: String?
+- metadata: JSON?
+- ipAddress: String?
+- userAgent: String?
+- createdAt: DateTime
+```
+
+## Enums
+
+```sql
+-- User roles
+UserRole: ADMIN | INSTRUCTOR | STUDENT
+
+-- Course member roles  
+CourseRole: OWNER | PARTICIPANT | MODERATOR
+
+-- Attendance status
+AttendanceStatus: PRESENT | LATE | ABSENT
+```
+
+## Database Operations
+
+### Initial Setup
+
+1. **Start PostgreSQL Container:**
+   ```bash
+   cd backend
+   docker-compose up -d postgres
+   ```
+
+2. **Deploy Schemas:**
+   ```bash
+   cd backend\services\auth-service
+   npx prisma db push
+   npx prisma generate
+
+   cd ..\attendance-service
+   npx prisma db push
+   npx prisma generate
+   ```
+
+3. **Seed Database:**
+   ```bash
+   cd backend
+   npm run seed
+   ```
+
+### Database Management
+
+#### Access Database
+```bash
+# Using Docker
+docker exec -it backend-postgres-1 psql -U postgres -d gps_attendance_production
+
+# Using Prisma Studio
+cd backend\services\auth-service
+npx prisma studio
+```
+
+#### Reset Database
+```bash
+# Stop containers and remove volumes
+cd backend
+docker-compose down -v
+
+# Restart and redeploy
+docker-compose up -d
+# Follow setup steps again
+```
+
+#### Backup Database
+```bash
+# Create backup
+docker exec backend-postgres-1 pg_dump -U postgres gps_attendance_production > backup.sql
+
+# Restore backup
+docker exec -i backend-postgres-1 psql -U postgres gps_attendance_production < backup.sql
+```
+
+## Data Statistics
+
+After seeding, the database contains:
+
+| Table | Records | Description |
+|-------|---------|-------------|
+| users | 527 | 2 admins, 25 instructors, 500 students |
+| courses | 80 | Academic courses with realistic content |
+| sessions | 2,406 | Class sessions with GPS coordinates |
+| attendances | 60,542 | Attendance records with realistic patterns |
+| course_members | 2,453 | Course enrollment relationships |
+| refresh_tokens | 671 | Active user authentication tokens |
+| system_logs | 5,000 | System activity audit trail |
+
+## Default User Credentials
+
+### Admin Users
+- **Email:** `system.admin@gpsattendance.edu`
+- **Email:** `super.admin@gpsattendance.edu`
+- **Password:** `Admin@2025!Secure`
+
+### Instructors
+- **Email Pattern:** `[firstName].[lastName]@university.edu`
+- **Password:** `Instructor@2025!Secure`
+- **Example:** `john.doe@university.edu`
+
+### Students
+- **Email Pattern:** `[firstName].[lastName][number]@student.edu`
+- **Password:** `Student@2025!Secure`
+- **Example:** `jane.smith1@student.edu`
+
+## Indexing Strategy
+
+### Primary Indexes
+- All primary keys (UUID)
+- Unique constraints (email, course code, QR codes)
 
 ### Performance Indexes
 ```sql
 -- User lookups
 CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_email_verification_token ON users(email_verification_token);
-CREATE INDEX idx_users_password_reset_token ON users(password_reset_token);
-
--- Token lookups
-CREATE INDEX idx_refresh_tokens_token ON refresh_tokens(token);
-CREATE INDEX idx_refresh_tokens_user_id ON refresh_tokens(user_id);
+CREATE INDEX idx_users_role ON users(role);
 
 -- Course queries
-CREATE INDEX idx_courses_code ON courses(code);
-CREATE INDEX idx_courses_owner_id ON courses(owner_id);
-CREATE INDEX idx_courses_is_active ON courses(is_active);
+CREATE INDEX idx_courses_owner ON courses(ownerId);
+CREATE INDEX idx_courses_active ON courses(isActive);
 
 -- Session queries
-CREATE INDEX idx_sessions_course_id ON sessions(course_id);
-CREATE INDEX idx_sessions_is_active ON sessions(is_active);
-CREATE INDEX idx_sessions_start_time ON sessions(start_time);
+CREATE INDEX idx_sessions_course ON sessions(courseId);
+CREATE INDEX idx_sessions_start_time ON sessions(startTime);
+CREATE INDEX idx_sessions_active ON sessions(isActive);
 
 -- Attendance queries
-CREATE INDEX idx_attendances_session_id ON attendances(session_id);
-CREATE INDEX idx_attendances_user_id ON attendances(user_id);
+CREATE INDEX idx_attendances_session ON attendances(sessionId);
+CREATE INDEX idx_attendances_user ON attendances(userId);
 CREATE INDEX idx_attendances_status ON attendances(status);
+CREATE INDEX idx_attendances_marked_at ON attendances(markedAt);
+
+-- Course membership
+CREATE INDEX idx_course_members_course ON course_members(courseId);
+CREATE INDEX idx_course_members_user ON course_members(userId);
+
+-- Token management
+CREATE INDEX idx_refresh_tokens_token ON refresh_tokens(token);
+CREATE INDEX idx_refresh_tokens_user ON refresh_tokens(userId);
 ```
 
-## Constraints
+## Data Relationships
 
-### Unique Constraints
-- `users.email`: Ensures unique email addresses
-- `courses.code`: Ensures unique course codes
-- `[course_members.course_id, course_members.user_id]`: Prevents duplicate enrollments
-- `[attendances.session_id, attendances.user_id]`: Prevents duplicate attendance marks
+### User → Courses
+- One-to-many: User owns multiple courses
+- Many-to-many: User joins multiple courses (via course_members)
 
-### Foreign Key Constraints
-All foreign keys have `ON DELETE CASCADE` to maintain referential integrity.
+### Course → Sessions
+- One-to-many: Course has multiple sessions
 
-## Data Types
+### Session → Attendances
+- One-to-many: Session has multiple attendance records
 
-### Custom Enums
-```typescript
-enum UserRole {
-  ADMIN = 'ADMIN',
-  INSTRUCTOR = 'INSTRUCTOR',
-  STUDENT = 'STUDENT'
-}
+### User → Attendances
+- One-to-many: User has multiple attendance records
 
-enum CourseRole {
-  OWNER = 'OWNER',
-  PARTICIPANT = 'PARTICIPANT'
-}
+## Queries Examples
 
-enum AttendanceStatus {
-  PRESENT = 'PRESENT',
-  LATE = 'LATE',
-  ABSENT = 'ABSENT'
-}
-```
-
-### JSON Fields
-- `courses.settings`: Course configuration
-- `attendances.device_info`: Device metadata
-- `system_logs.metadata`: Audit log data
-
-## Migrations
-
-### Running Migrations
-```bash
-# Development
-npx prisma migrate dev
-
-# Production
-npx prisma migrate deploy
-
-# Create migration without applying
-npx prisma migrate dev --create-only
-
-# Reset database
-npx prisma migrate reset
-```
-
-### Migration History
-Track all migrations in `prisma/migrations/` directory.
-
-## Backup Strategy
-
-### Automated Backups
-```bash
-# Daily backup script
-#!/bin/bash
-pg_dump $DATABASE_URL > backup_$(date +%Y%m%d).sql
-```
-
-### Point-in-Time Recovery
-Configure PostgreSQL WAL archiving for PITR capability.
-
-## Performance Optimization
-
-### Query Optimization
-1. Use select specific fields instead of SELECT *
-2. Implement pagination for large datasets
-3. Use database connection pooling
-4. Cache frequently accessed data in Redis
-
-### Connection Pooling
-```typescript
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL,
-    },
-  },
-  connection_limit: 10,
-});
-```
-
-## Monitoring
-
-### Key Metrics
-- Connection pool usage
-- Query execution time
-- Slow query log
-- Table sizes
-- Index usage
-
-### Health Checks
-```typescript
-async function checkDatabaseHealth() {
-  try {
-    await prisma.$queryRaw`SELECT 1`;
-    return { status: 'healthy' };
-  } catch (error) {
-    return { status: 'unhealthy', error };
-  }
-}
-```
-
-## Security Best Practices
-
-1. **Data Encryption**
-   - Use SSL/TLS for connections
-   - Encrypt sensitive fields at rest
-   
-2. **Access Control**
-   - Use connection pooling with limited permissions
-   - Implement row-level security where needed
-   
-3. **Audit Logging**
-   - Log all data modifications
-   - Track failed authentication attempts
-   
-4. **Data Sanitization**
-   - Use parameterized queries (handled by Prisma)
-   - Validate input before database operations
-
-## Maintenance
-
-### Regular Tasks
-- Weekly: Analyze and vacuum tables
-- Monthly: Review slow query logs
-- Quarterly: Review and update indexes
-- Yearly: Archive old attendance data
-
-### Commands
+### Get User's Courses
 ```sql
--- Analyze tables
-ANALYZE;
-
--- Vacuum to reclaim space
-VACUUM FULL;
-
--- Check table sizes
-SELECT schemaname, tablename, pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) 
-FROM pg_tables WHERE schemaname = 'public';
-
--- Check index usage
-SELECT schemaname, tablename, indexname, idx_scan 
-FROM pg_stat_user_indexes ORDER BY idx_scan;
+SELECT c.* FROM courses c
+JOIN course_members cm ON c.id = cm.courseId
+WHERE cm.userId = $1;
 ```
+
+### Get Session Attendance
+```sql
+SELECT u.firstName, u.lastName, a.status, a.markedAt, a.distanceFromSession
+FROM attendances a
+JOIN users u ON a.userId = u.id
+WHERE a.sessionId = $1
+ORDER BY a.markedAt;
+```
+
+### Get User Attendance Statistics
+```sql
+SELECT 
+  COUNT(*) as totalSessions,
+  COUNT(CASE WHEN a.status = 'PRESENT' THEN 1 END) as presentCount,
+  COUNT(CASE WHEN a.status = 'LATE' THEN 1 END) as lateCount,
+  COUNT(CASE WHEN a.status = 'ABSENT' THEN 1 END) as absentCount
+FROM sessions s
+LEFT JOIN attendances a ON s.id = a.sessionId AND a.userId = $1
+JOIN course_members cm ON s.courseId = cm.courseId
+WHERE cm.userId = $1 AND s.endTime < NOW();
+```
+
+## Troubleshooting
+
+### Common Issues
+
+**Connection Failed:**
+```bash
+# Check if PostgreSQL is running
+docker-compose ps
+
+# Check connection string
+echo $DATABASE_URL
+```
+
+**Migration Failed:**
+```bash
+# Reset and redeploy
+npx prisma db push --force-reset
+```
+
+**Hard Link Issues:**
+```bash
+# Verify hard links exist
+ls -la backend/services/auth-service/.env
+ls -la backend/services/attendance-service/.env
+
+# Recreate if missing
+cmd /c "mklink /H .env c:\Data\attendance-tracker\backend\.env"
+```
+
+### Monitoring
+
+#### Database Size
+```sql
+SELECT pg_size_pretty(pg_database_size('gps_attendance_production'));
+```
+
+#### Active Connections
+```sql
+SELECT count(*) FROM pg_stat_activity WHERE datname = 'gps_attendance_production';
+```
+
+#### Table Sizes
+```sql
+SELECT 
+  schemaname,
+  tablename,
+  pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) as size
+FROM pg_tables 
+WHERE schemaname = 'public' 
+ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
+```
+
+## Security Considerations
+
+- All passwords are hashed using bcrypt
+- UUIDs used for all primary keys to prevent enumeration
+- Soft deletes implemented where needed
+- Audit logs in system_logs table
+- Row-level security can be implemented for multi-tenancy
+- Connection pooling limits concurrent connections
+- Regular backups and point-in-time recovery available

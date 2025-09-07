@@ -1,12 +1,22 @@
+/**
+ * GPS Attendance Tracker - Authentication Service
+ * 
+ * Copyright (c) 2025 ORN Borakport (Backend & Web Interface) and MON Dina (Mobile App)
+ * Licensed under the MIT License
+ * 
+ * Main entry point for the authentication microservice
+ */
+
 import dotenv from 'dotenv';
 import { createApp } from './app';
 import { connectRedis } from './config/redis';
 import logger from './config/logger';
+import path from 'path';
 
-// Load environment variables
-dotenv.config();
+// Load environment variables from backend/.env
+dotenv.config({ path: path.join(__dirname, '../../../.env') });
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.AUTH_SERVICE_PORT || process.env.PORT || 3001;
 
 async function startServer() {
   try {

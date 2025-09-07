@@ -214,7 +214,7 @@ export class UserModel {
         throw new Error('User not found');
       }
 
-      let updateData: UpdateUserData = {};
+      const updateData: UpdateUserData = {};
 
       if (increment) {
         const attempts = (user.loginAttempts || 0) + 1;

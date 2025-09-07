@@ -42,7 +42,7 @@ export const createUser = Joi.object({
     }),
 
   phone: Joi.string()
-    .pattern(/^\+?[\d\s\-\(\)]{10,20}$/)
+    .pattern(/^\+?[\d\s\-()]{10,20}$/)
     .optional()
     .allow('')
     .messages({
@@ -78,7 +78,7 @@ export const updateUser = Joi.object({
     }),
 
   phone: Joi.string()
-    .pattern(/^\+?[\d\s\-\(\)]{10,20}$/)
+    .pattern(/^\+?[\d\s\-()]{10,20}$/)
     .optional()
     .allow('')
     .messages({

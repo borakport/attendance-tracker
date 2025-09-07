@@ -42,7 +42,7 @@ export interface RefreshTokenData {
 }
 
 // User Types
-export interface UserProfile extends Omit<User, 'password'> {}
+export type UserProfile = Omit<User, 'password'>;
 
 export interface UserRegistrationData {
   email: string;

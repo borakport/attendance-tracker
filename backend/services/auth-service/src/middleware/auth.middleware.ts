@@ -1,7 +1,22 @@
 import { Request, Response, NextFunction } from 'express';
 import { JWTUtils } from '../utils/jwt.utils';
-import { UserRole } from '@prisma/client';
 import logger from '../config/logger';
+
+// Define UserRole type locally to avoid import issues
+type UserRole = 'ADMIN' | 'INSTRUCTOR' | 'STUDENT';
+
+// Extend Express Request to include user information
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        userId: string;
+        email: string;
+        role: UserRole;
+      };
+    }
+  }
+}
 
 export interface AuthRequest extends Request {
   user?: {
@@ -12,7 +27,7 @@ export interface AuthRequest extends Request {
 }
 
 export const authenticate = async (
-  req: AuthRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {

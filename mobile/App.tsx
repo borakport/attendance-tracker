@@ -1,3 +1,13 @@
+/**
+ * GPS Attendance Tracker - Mobile Application
+ * 
+ * Copyright (c) 2025 ORN Borakport (Backend & Web Interface) and MON Dina (Mobile App)
+ * Licensed under the MIT License
+ * 
+ * Main application component for React Native mobile app
+ * Developed by: MON Dina
+ */
+
 import React, { useEffect, useRef, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { Provider } from 'react-redux';

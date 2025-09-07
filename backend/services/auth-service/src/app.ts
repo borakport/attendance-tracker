@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import { constants } from './config/constants';
-import authRoutes from './routes/auth.routes';
+import routes from './routes';
 import { errorHandler, notFoundHandler } from './middleware/error.middleware';
 import logger from './config/logger';
 
@@ -83,7 +83,7 @@ export const createApp = (): Application => {
   });
 
   // API routes
-  app.use(`${constants.API_PREFIX}/auth`, authRoutes);
+  app.use(constants.API_PREFIX, routes);
 
   // Error handling
   app.use(notFoundHandler);

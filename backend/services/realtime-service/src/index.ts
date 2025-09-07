@@ -3,6 +3,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
 import { connectRedis } from './config/redis';
 import { authenticateSocket, AuthenticatedSocket } from './middleware/socket.auth';
 import { authenticateService, ServiceSocket } from './middleware/service.auth';
@@ -10,7 +11,8 @@ import { CourseHandler } from './handlers/course.handler';
 import { SessionHandler } from './handlers/session.handler';
 import { AttendanceHandler } from './handlers/attendance.handler';
 
-dotenv.config();
+// Load environment variables from backend/.env
+dotenv.config({ path: path.join(__dirname, '../../../.env') });
 
 const app = express();
 const httpServer = createServer(app);
@@ -253,7 +255,7 @@ serviceNamespace.on('connection', (socket: ServiceSocket) => {
   });
 });
 
-const PORT = process.env.PORT || 3003;
+const PORT = process.env.REALTIME_SERVICE_PORT || process.env.PORT || 3003;
 
 async function startServer() {
   try {

@@ -1,7 +1,10 @@
 {
   "name": "attendance-tracker-web",
   "version": "0.1.0",
+  "description": "Web frontend for GPS Attendance Tracker",
   "private": true,
+  "author": "ORN Borakport <borakport@github.com> (https://github.com/borakport)",
+  "license": "MIT",
   "scripts": {
     "dev": "next dev --port 3000",
     "build": "next build",

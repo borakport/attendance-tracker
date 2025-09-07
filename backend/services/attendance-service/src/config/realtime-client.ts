@@ -5,8 +5,16 @@ class RealtimeClient {
   private socket: Socket | null = null;
   private reconnectTimer: NodeJS.Timeout | null = null;
   private isConnecting: boolean = false;
+  private initialized: boolean = false;
 
   constructor() {
+    // Don't connect immediately - wait for init() to be called
+  }
+
+  // Call this method after environment variables are loaded
+  public init(): void {
+    if (this.initialized) return;
+    this.initialized = true;
     this.connect();
   }
 

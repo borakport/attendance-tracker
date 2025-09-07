@@ -1,7 +1,7 @@
 export const constants = {
   // Environment
   NODE_ENV: process.env.NODE_ENV || 'development',
-  PORT: parseInt(process.env.PORT || '3002', 10),
+  PORT: parseInt(process.env.ATTENDANCE_SERVICE_PORT || process.env.PORT || '3002', 10),
   
   API_PREFIX: '/api/v1',
   

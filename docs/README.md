@@ -1,192 +1,219 @@
-# GPS Attendance Tracking System Documentation
+# GPS Attendance Tracking System
 
-## 🎉 COMPLETE SYSTEM - PRODUCTION READY
+A comprehensive GPS-based attendance tracking system with real-time location verification, built with microservices architecture.
 
-A comprehensive GPS-based attendance tracking system with real-time location verification, built with microservices architecture and a full-featured mobile application.
+**Open Source Project** - Licensed under MIT License  
+**Contributors:** ORN Borakport (Backend & Web) and MON Dina (Mobile App)
 
-**Created Date:** 2025-08-26  
-**Completed Date:** 2025-08-28  
-**Author:** borakport  
-**Version:** 1.0.0 - COMPLETE  
-**Status:** 🟢 PRODUCTION READY  
-**Platform:** Cross-platform (Backend) + Mobile (iOS/Android)
-
-## 🚀 System Features
-
-### ✅ Complete Backend (Microservices)
-- **Authentication Service** - JWT-based secure authentication
-- **Attendance Service** - GPS-based attendance marking
-- **Realtime Service** - WebSocket live updates
-- **Database** - PostgreSQL with Prisma ORM
-- **Caching** - Redis for performance and real-time pub/sub
-
-### ✅ Complete Mobile App (React Native)
-- **GPS Attendance Marking** - Real-time location tracking
-- **Course Management** - Join courses via QR codes or manual entry
-- **Interactive Maps** - Session locations with radius visualization
-- **Professional UI** - Material Design 3 implementation
-- **Real-time Updates** - Live session and attendance data
-- **Complete Navigation** - Bottom tabs + stack navigators
-
-## 📚 Documentation Structure
-
-### Core Documentation
-- [📊 Project Status](./PROJECT_STATUS.md) - **Current: COMPLETE v1.0**
-- [🏗️ Architecture Overview](./ARCHITECTURE.md)
-- [📡 API Documentation](./API_DOCUMENTATION.md)
-- [🛠️ Development Guide](./DEVELOPMENT.md)
-- [🚀 Deployment Guide](./DEPLOYMENT.md)
-
-### Technical Guides
-- [🔧 Troubleshooting](./TROUBLESHOOTING.md)
-- [🗄️ Database Documentation](./DATABASE.md)
-- [🔐 Security Documentation](./SECURITY.md)
-- [⚡ Realtime Service Architecture](./REALTIME_SERVICE_ARCHITECTURE.md)
-
-## 🎯 Quick Start Guide
+## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js v18+ 
-- Docker Desktop (Windows/macOS/Linux)
-- PostgreSQL 15+ (via Docker)
-- Redis 7+ (via Docker)
-- React Native development environment (Expo CLI)
-- Git Bash (recommended for Windows)
+- Node.js 18+ 
+- Docker Desktop
+- Git
 
-### Complete System Setup
+### Installation
 
-#### 1. Backend Services
-```batch
-REM Open Command Prompt or PowerShell
-cd backend
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/borakport/attendance-tracker.git
+   cd attendance-tracker
+   ```
 
-REM Start Docker containers
-docker-compose up -d
+2. **Start infrastructure services**
+   ```bash
+   cd backend
+   docker-compose up -d
+   ```
 
-REM Setup all services
-cd services\auth-service
-npm install && npm run dev
+3. **Set up environment configuration**
+   ```bash
+   # Create hard links for Prisma CLI access (Windows)
+   cd backend\services\auth-service
+   cmd /c "mklink /H .env c:\Data\attendance-tracker\backend\.env"
+   
+   cd ..\attendance-service
+   cmd /c "mklink /H .env c:\Data\attendance-tracker\backend\.env"
+   ```
 
-REM In separate terminals:
-cd services\attendance-service  
-npm install && npm run dev
+4. **Initialize database**
+   ```bash
+   cd backend\services\auth-service
+   npx prisma db push
+   npx prisma generate
+   
+   cd ..\attendance-service  
+   npx prisma db push
+   npx prisma generate
+   
+   cd ..\..
+   npm run seed
+   ```
 
-cd services\realtime-service
-npm install && npm run dev
+5. **Start services**
+   ```bash
+   # Auth Service
+   cd backend\services\auth-service
+   npm install && npm run build && npm start
+   
+   # Attendance Service  
+   cd ..\attendance-service
+   npm install && npm run build && npm start
+   
+   # Realtime Service
+   cd ..\realtime-service
+   npm install && npm run build && npm start
+   ```
+
+6. **Start mobile app**
+   ```bash
+   cd mobile
+   npm install
+   npm start
+   ```
+
+## 🏗️ Architecture
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Mobile App    │    │    Web App      │    │   Admin Panel   │
+│  (React Native)│    │   (Next.js)     │    │   (Next.js)     │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         └───────────────────────┼───────────────────────┘
+                                 │
+              ┌─────────────────────────────────────┐
+              │           API Gateway               │
+              └─────────────────────────────────────┘
+                                 │
+         ┌───────────────────────┼───────────────────────┐
+         │                       │                       │
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│  Auth Service   │    │Attendance Service│    │ Realtime Service│
+│    (Port 3001)  │    │   (Port 3002)   │    │   (Port 3003)   │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         └───────────────────────┼───────────────────────┘
+                                 │
+              ┌─────────────────────────────────────┐
+              │            Data Layer               │
+              │  PostgreSQL  │  Redis  │  Storage   │
+              └─────────────────────────────────────┘
 ```
 
-#### 2. Mobile App Setup
-```batch
-REM Navigate to mobile directory
-cd mobile
+## 📚 Documentation
 
-REM Install dependencies
-npm install
+- **[Setup Guide](./SETUP.md)** - Detailed installation and configuration
+- **[API Documentation](./API.md)** - Complete API reference
+- **[Architecture](./ARCHITECTURE.md)** - System design and components
+- **[Development](./DEVELOPMENT.md)** - Development environment setup
+- **[Deployment](./DEPLOYMENT.md)** - Production deployment guide
+- **[Database](./DATABASE.md)** - Database schema and operations
+- **[Security](./SECURITY.md)** - Security considerations
+- **[Troubleshooting](./TROUBLESHOOTING.md)** - Common issues and solutions
 
-REM Start development server
-npm start
+## 🔐 Default Credentials
 
-REM Scan QR code with Expo Go app or use simulator
-```
-docker-compose up -d
+**Admin Users:**
+- Email: `system.admin@gpsattendance.edu`
+- Email: `super.admin@gpsattendance.edu`  
+- Password: `Admin@2025!Secure`
 
-cd services/auth-service
-npm install
-npm run dev
-```
+**Instructors:**
+- Email Pattern: `[firstName].[lastName]@university.edu`
+- Password: `Instructor@2025!Secure`
 
-### macOS/Linux Setup
-```bash
-cd backend
-docker-compose up -d
-cd services/auth-service
-npm install
-npm run dev
-```
+**Students:**
+- Email Pattern: `[firstName].[lastName][number]@student.edu`
+- Password: `Student@2025!Secure`
 
-### Mobile App Setup
-```batch
-REM Windows Command Prompt
-cd mobile\AttendanceApp
-npm install
+## 📊 Database Statistics
 
-REM For Android
-npm run android
+After seeding, the database contains:
+- **527 users** (2 admins, 25 instructors, 500 students)
+- **80 courses** with realistic academic content
+- **2,406 class sessions** with GPS coordinates
+- **60,542 attendance records** 
+- **2,453 course memberships**
 
-REM For iOS (macOS only)
-cd ios && pod install && cd ..
-npm run ios
-```
+## 🛠️ Tech Stack
 
-## Features
-- 🔐 Secure authentication with JWT
-- 📍 GPS-based attendance verification
-- ⚡ Real-time updates via WebSocket
-- 📱 Native mobile apps (iOS & Android)
-- 🎓 Course management system
-- 📊 Attendance analytics
-- 🔄 Offline support with sync
-- 💻 Cross-platform support (Windows/macOS/Linux)
+**Backend:**
+- Node.js + TypeScript
+- Express.js microservices
+- PostgreSQL + Prisma ORM
+- Redis for caching
+- JWT authentication
+- WebSocket for real-time updates
 
-## Tech Stack
+**Frontend:**
+- React Native (Mobile)
+- Next.js (Web & Admin)
+- TypeScript
+- TailwindCSS
 
-### Backend
-- **Runtime:** Node.js with TypeScript
-- **Framework:** Express.js
-- **Database:** PostgreSQL with Prisma ORM
-- **Cache:** Redis
-- **Real-time:** Socket.io
-- **Authentication:** JWT with refresh tokens
-- **Security:** Helmet, CORS, Rate Limiting
-- **Containerization:** Docker Desktop
+**Infrastructure:**
+- Docker & Docker Compose
+- Nginx (production)
+- SSL/TLS encryption
 
-### Mobile
-- **Framework:** React Native with TypeScript
-- **Navigation:** React Navigation v6
-- **State Management:** Redux Toolkit
-- **UI Components:** React Native Paper
-- **Forms:** React Hook Form
-- **Validation:** Yup
+## 📈 Features
 
-## Project Structure
-```
-attendance-tracker/
-├── backend/              # Microservices backend
-│   ├── services/         # Individual services
-│   ├── shared/           # Shared utilities
-│   ├── docker-compose.yml
-│   ├── start-db.bat      # Windows helper script
-│   ├── stop-db.bat       # Windows helper script
-│   └── reset-db.bat      # Windows helper script
-├── mobile/               # React Native app
-├── docs/                 # Documentation
-└── README.md             # Project overview
-```
+### ✅ Core Features
+- **GPS-based attendance tracking**
+- **Real-time location verification**
+- **QR code session joining**
+- **Course management**
+- **Real-time updates via WebSocket**
+- **Role-based access control**
+- **Comprehensive admin panel**
 
-## Platform-Specific Notes
+### ✅ Security Features
+- **JWT authentication with refresh tokens**
+- **Password hashing with bcrypt**
+- **Rate limiting**
+- **Input validation**
+- **SQL injection prevention**
+- **CORS protection**
 
-### Windows Users
-- Use Docker Desktop for Windows
-- Recommended: Install Git Bash for Unix-like commands
-- Use PowerShell or Command Prompt for native Windows commands
-- Path separators: Use `\` in Windows commands, `/` in Git Bash
+### ✅ Mobile Features
+- **Cross-platform (iOS/Android)**
+- **Offline-first design**
+- **Push notifications**
+- **Interactive maps**
+- **Camera integration for selfies**
+- **Biometric authentication support**
 
-### macOS Users
-- Use Docker Desktop for Mac
-- Use Terminal for all commands
-- Install Xcode for iOS development
+## 🔄 Development Workflow
 
-### Linux Users
-- Install Docker and Docker Compose
-- Use native terminal
-- May need to use `sudo` for Docker commands
+1. **Feature Development**
+   ```bash
+   git checkout -b feature/your-feature-name
+   # Make changes
+   git commit -m "feat: add new feature"
+   git push origin feature/your-feature-name
+   ```
 
-## Contributing
-Please read [DEVELOPMENT.md](./DEVELOPMENT.md) for development guidelines.
+2. **Testing**
+   ```bash
+   npm test                    # Unit tests
+   npm run test:integration   # Integration tests
+   npm run test:e2e          # End-to-end tests
+   ```
 
-## License
-MIT License - See LICENSE file for details
+3. **Code Quality**
+   ```bash
+   npm run lint              # ESLint
+   npm run format            # Prettier
+   npm run type-check        # TypeScript
+   ```
 
-## Support
-- Author: borakport
-- Last Updated: 2025-08-26
+## 📞 Support
+
+- **Documentation Issues:** Check [Troubleshooting](./TROUBLESHOOTING.md)
+- **Development Questions:** See [Development Guide](./DEVELOPMENT.md)
+- **Deployment Help:** Review [Deployment Guide](./DEPLOYMENT.md)
+
+## 📝 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
