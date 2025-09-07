@@ -1,16 +1,16 @@
 export const Config = {
   API: {
-    AUTH_URL: process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:3001/api/v1',
-    ATTENDANCE_URL: process.env.EXPO_PUBLIC_ATTENDANCE_API_URL || 'http://10.0.2.2:3002/api/v1',
-    REALTIME_URL: process.env.EXPO_PUBLIC_REALTIME_URL || 'http://10.0.2.2:3003',
+    AUTH_URL: process.env.API_BASE_URL || 'http://10.0.2.2:3001',
+    ATTENDANCE_URL: process.env.ATTENDANCE_API_URL || 'http://10.0.2.2:3002',
+    REALTIME_URL: process.env.REALTIME_API_URL || 'http://10.0.2.2:3003',
     TIMEOUT: 30000,
   },
   
   APP: {
     NAME: 'GPS Attendance',
     VERSION: '1.0.0',
-    DEBUG: process.env.EXPO_PUBLIC_DEBUG_MODE === 'true',
-    SHOW_TEST_ACCOUNTS: process.env.EXPO_PUBLIC_SHOW_TEST_ACCOUNTS === 'true' || __DEV__,
+    DEBUG: process.env.DEBUG_MODE === 'true',
+    SHOW_TEST_ACCOUNTS: process.env.DEBUG_MODE === 'true' || __DEV__,
   },
   
   GPS: {
