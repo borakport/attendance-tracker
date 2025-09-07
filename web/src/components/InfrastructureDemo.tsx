@@ -150,7 +150,7 @@ export function UsersManagementExample() {
           {usersData ? (
             <div>
               <p className="text-sm text-gray-600 mb-2">
-                Loaded {usersData.data?.length || 0} users
+                Loaded {(usersData as any)?.data?.length || 0} users
               </p>
               <pre className="text-xs bg-white p-2 rounded overflow-auto max-h-32">
                 {JSON.stringify(usersData, null, 2)}

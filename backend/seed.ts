@@ -1,4 +1,28 @@
-import { PrismaClient, UserRole, CourseRole, AttendanceStatus } from '@prisma/client';
+// This file imports from the auth service Prisma client which has all the models
+import { PrismaClient } from './services/auth-service/node_modules/@prisma/client';
+// Import types from the auth service
+type UserRole = 'ADMIN' | 'INSTRUCTOR' | 'STUDENT';
+type CourseRole = 'OWNER' | 'PARTICIPANT';
+type AttendanceStatus = 'PRESENT' | 'LATE' | 'ABSENT';
+
+// Enum constants
+const UserRole = {
+  ADMIN: 'ADMIN' as const,
+  INSTRUCTOR: 'INSTRUCTOR' as const,
+  STUDENT: 'STUDENT' as const
+};
+
+const CourseRole = {
+  OWNER: 'OWNER' as const,
+  PARTICIPANT: 'PARTICIPANT' as const
+};
+
+const AttendanceStatus = {
+  PRESENT: 'PRESENT' as const,
+  LATE: 'LATE' as const,
+  ABSENT: 'ABSENT' as const
+};
+
 import * as bcrypt from 'bcrypt';
 import { randomBytes, randomUUID } from 'crypto';
 

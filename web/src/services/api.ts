@@ -817,3 +817,8 @@ export const adminAPI = {
     endDate?: string;
   }) => apiClient.getAdminAttendanceRecords(filters),
 };
+
+// Export the main API service
+export const apiService = apiClient;
+export const adminAPI = adminApiService;
+export default apiClient;
