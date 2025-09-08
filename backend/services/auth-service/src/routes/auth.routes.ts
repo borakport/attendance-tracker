@@ -53,6 +53,21 @@ router.post('/refresh-access-token', validate(authValidator.refreshToken), AuthC
 // Verifies user email address using verification token
 router.post('/verify-email', validate(authValidator.verifyEmail), AuthController.verifyEmail);
 
+// Email Verification Link (GET)
+// GET /api/auth/verify-email?token=xxx
+// Handles email verification link clicks and redirects to web UI
+router.get('/verify-email', AuthController.verifyEmailLink);
+
+// Phone Verification
+// POST /api/auth/verify-phone
+// Verifies user phone number using verification code
+router.post('/verify-phone', validate(authValidator.verifyPhone), AuthController.verifyPhone);
+
+// Resend Phone Verification
+// POST /api/auth/resend-phone-verification
+// Resends phone verification code to user
+router.post('/resend-phone-verification', validate(authValidator.resendPhoneVerification), AuthController.resendPhoneVerification);
+
 // Forgot Password
 // POST /api/auth/forgot-password
 // Initiates password reset process by sending reset email

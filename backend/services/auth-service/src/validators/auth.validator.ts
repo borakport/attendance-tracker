@@ -92,6 +92,25 @@ export const authValidator = {
   }),
 
   /**
+   * Phone Verification Validation Schema
+   * Validates phone verification code
+   */
+  verifyPhone: Joi.object({
+    userId: Joi.string().required(),
+    code: Joi.string().pattern(/^\d{6}$/).required().messages({
+      'string.pattern.base': 'Verification code must be 6 digits',
+    }),
+  }),
+
+  /**
+   * Resend Phone Verification Validation Schema
+   * Validates request to resend phone verification code
+   */
+  resendPhoneVerification: Joi.object({
+    userId: Joi.string().required(),
+  }),
+
+  /**
    * Refresh Token Validation Schema
    * Validates refresh token for generating new access tokens
    */

@@ -2,6 +2,8 @@ import { User, UserRole } from '@prisma/client';
 import { JWTUtils } from '../utils/jwt.utils';
 import { PasswordUtils } from '../utils/password.utils';
 import { EmailService } from './email.service';
+import { SmsService } from './sms.service';
+import { CodeGenerator } from '../utils/code.generator';
 import { UserModel, CreateUserData, UpdateUserData } from '../models/user.model';
 import { AppError } from '../middleware/error.middleware';
 import redisClient from '../config/redis';
@@ -35,6 +37,7 @@ export interface ChangePasswordData {
 
 export class AuthService {
   private static emailService = new EmailService();
+  private static smsService = new SmsService();
 
   /**
    * Register a new user
@@ -77,6 +80,33 @@ export class AuthService {
         // Don't fail registration if email fails
       }
 
+      // Handle phone verification if phone number is provided
+      let phoneVerificationMessage = '';
+      if (data.phoneNumber) {
+        try {
+          // Generate phone verification code
+          const phoneVerificationCode = CodeGenerator.generateVerificationCode(6);
+          
+          // Store phone verification code in Redis (expires in 10 minutes)
+          await redisClient.setEx(
+            `${constants.REDIS_PHONE_VERIFY_PREFIX}${user.id}`,
+            10 * 60, // 10 minutes
+            phoneVerificationCode
+          );
+
+          // Send verification SMS
+          await this.smsService.sendVerificationCode(data.phoneNumber, phoneVerificationCode);
+          
+          phoneVerificationMessage = ' Please also check your phone for SMS verification.';
+          
+          logger.info(`Phone verification code sent to: ${data.phoneNumber}`);
+        } catch (smsError) {
+          logger.warn('Failed to send phone verification SMS:', smsError);
+          // Don't fail registration if SMS fails
+          phoneVerificationMessage = ' Note: SMS verification failed to send but you can verify later.';
+        }
+      }
+
       logger.info(`User registered: ${user.email}`);
 
       // Remove password from response
@@ -84,7 +114,7 @@ export class AuthService {
 
       return {
         user: userWithoutPassword,
-        message: 'User registered successfully. Please check your email for verification.',
+        message: `User registered successfully. Please check your email for verification.${phoneVerificationMessage}`,
       };
     } catch (error) {
       logger.error('Signup error:', error);
@@ -295,6 +325,73 @@ export class AuthService {
       return { message: 'Email verified successfully' };
     } catch (error) {
       logger.error('Email verification error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Verify phone number with verification code
+   */
+  static async verifyPhone(userId: string, code: string): Promise<{ message: string }> {
+    try {
+      // Check if verification code exists in Redis
+      const storedCode = await redisClient.get(`${constants.REDIS_PHONE_VERIFY_PREFIX}${userId}`);
+      if (!storedCode || storedCode !== code) {
+        throw new AppError(400, 'Invalid or expired verification code');
+      }
+
+      // Update user phone verification status
+      await UserModel.updateById(userId, { phoneVerified: true });
+
+      // Remove code from Redis
+      await redisClient.del(`${constants.REDIS_PHONE_VERIFY_PREFIX}${userId}`);
+
+      logger.info(`Phone verified for user: ${userId}`);
+
+      return { message: 'Phone number verified successfully' };
+    } catch (error) {
+      logger.error('Phone verification error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Resend phone verification code
+   */
+  static async resendPhoneVerification(userId: string): Promise<{ message: string }> {
+    try {
+      // Get user details
+      const user = await UserModel.findById(userId);
+      if (!user) {
+        throw new AppError(404, 'User not found');
+      }
+
+      if (!user.phoneNumber) {
+        throw new AppError(400, 'No phone number associated with this account');
+      }
+
+      if (user.phoneVerified) {
+        throw new AppError(400, 'Phone number is already verified');
+      }
+
+      // Generate new verification code
+      const phoneVerificationCode = CodeGenerator.generateVerificationCode(6);
+      
+      // Store phone verification code in Redis (expires in 10 minutes)
+      await redisClient.setEx(
+        `${constants.REDIS_PHONE_VERIFY_PREFIX}${userId}`,
+        10 * 60, // 10 minutes
+        phoneVerificationCode
+      );
+
+      // Send verification SMS
+      await this.smsService.sendVerificationCode(user.phoneNumber, phoneVerificationCode);
+      
+      logger.info(`Phone verification code resent to: ${user.phoneNumber}`);
+
+      return { message: 'Verification code sent to your phone number' };
+    } catch (error) {
+      logger.error('Resend phone verification error:', error);
       throw error;
     }
   }

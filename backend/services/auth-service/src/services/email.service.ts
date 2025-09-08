@@ -78,7 +78,8 @@ export class EmailService {
   }
 
   async sendVerificationEmail(email: string, token: string, firstName: string): Promise<void> {
-    const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
+    // Use the backend verification endpoint which will redirect to frontend
+    const verificationUrl = `${process.env.AUTH_SERVICE_URL || 'http://localhost:3001'}/api/v1/auth/verify-email?token=${token}`;
     
     const html = `
       <!DOCTYPE html>

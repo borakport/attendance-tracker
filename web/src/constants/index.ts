@@ -101,50 +101,6 @@ export const ROLE_PERMISSIONS = {
   ]
 };
 
-// Demo Data (for development)
-export const DEMO_USERS = [
-  {
-    id: 'admin1',
-    name: 'Admin User',
-    email: 'admin@smartattendance.com',
-    password: 'admin123',
-    role: ROLES.ADMIN,
-    permissions: ROLE_PERMISSIONS[ROLES.ADMIN]
-  },
-  {
-    id: 'instructor1',
-    name: 'Dr. Sarah Johnson',
-    email: 'sarah.johnson@smartattendance.com',
-    password: 'instructor123',
-    role: ROLES.INSTRUCTOR,
-    permissions: ROLE_PERMISSIONS[ROLES.INSTRUCTOR]
-  },
-  {
-    id: 'instructor2',
-    name: 'Prof. Michael Brown',
-    email: 'michael.brown@smartattendance.com',
-    password: 'instructor123',
-    role: ROLES.INSTRUCTOR,
-    permissions: ROLE_PERMISSIONS[ROLES.INSTRUCTOR]
-  },
-  {
-    id: 'student1',
-    name: 'John Smith',
-    email: 'john.smith@smartattendance.com',
-    password: 'student123',
-    role: ROLES.STUDENT,
-    permissions: ROLE_PERMISSIONS[ROLES.STUDENT]
-  },
-  {
-    id: 'student2',
-    name: 'Emily Davis',
-    email: 'emily.davis@smartattendance.com',
-    password: 'student123',
-    role: ROLES.STUDENT,
-    permissions: ROLE_PERMISSIONS[ROLES.STUDENT]
-  }
-];
-
 // Route Configurations
 export const ROUTES = {
   LOGIN: '/login',
@@ -152,8 +108,7 @@ export const ROUTES = {
   INSTRUCTOR_DASHBOARD: '/instructor-dashboard',
   STUDENT_DASHBOARD: '/student-dashboard',
   PROFILE: '/profile',
-  SETTINGS: '/settings',
-  DEMO: '/demo'
+  SETTINGS: '/settings'
 };
 
 // Status Constants

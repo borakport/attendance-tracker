@@ -35,6 +35,7 @@ export default function RegisterScreen({ navigation }: any) {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [role, setRole] = useState('student');
@@ -47,6 +48,7 @@ export default function RegisterScreen({ navigation }: any) {
   const [firstNameError, setFirstNameError] = useState('');
   const [lastNameError, setLastNameError] = useState('');
   const [emailError, setEmailError] = useState('');
+  const [phoneNumberError, setPhoneNumberError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
 
@@ -102,6 +104,21 @@ export default function RegisterScreen({ navigation }: any) {
     return true;
   };
 
+  const validatePhoneNumber = (phone: string) => {
+    const phoneRegex = /^\+?[1-9]\d{1,14}$/;
+    // Phone number is optional, only validate format if provided
+    if (!phone.trim()) {
+      setPhoneNumberError('');
+      return true; // Valid when empty (optional field)
+    }
+    if (!phoneRegex.test(phone.trim())) {
+      setPhoneNumberError('Please enter a valid phone number (e.g., +1234567890)');
+      return false;
+    }
+    setPhoneNumberError('');
+    return true;
+  };
+
   const validatePassword = (password: string) => {
     if (!password) {
       setPasswordError('Password is required');
@@ -136,11 +153,12 @@ export default function RegisterScreen({ navigation }: any) {
     const isFirstNameValid = validateFirstName(firstName);
     const isLastNameValid = validateLastName(lastName);
     const isEmailValid = validateEmail(email);
+    const isPhoneNumberValid = validatePhoneNumber(phoneNumber);
     const isPasswordValid = validatePassword(password);
     const isConfirmPasswordValid = validateConfirmPassword(confirmPassword);
     
     if (!isFirstNameValid || !isLastNameValid || !isEmailValid || 
-        !isPasswordValid || !isConfirmPasswordValid) {
+        !isPhoneNumberValid || !isPasswordValid || !isConfirmPasswordValid) {
       return;
     }
 
@@ -156,25 +174,46 @@ export default function RegisterScreen({ navigation }: any) {
 
     setIsLoading(true);
     try {
-      // Call API directly for signup (don't auto-login)
-      const response = await apiService.signUp({
+      // Prepare signup data - only include phone number if provided
+      const signupData: any = {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         email: email.toLowerCase().trim(),
         password,
         role,
-      });
+      };
+      
+      // Only include phone number if user provided one
+      if (phoneNumber.trim()) {
+        signupData.phoneNumber = phoneNumber.trim();
+      }
+      
+      // Call API directly for signup (don't auto-login)
+      const response = await apiService.signUp(signupData);
       
       if (response.success) {
+        const hasPhoneNumber = phoneNumber.trim();
+        
         Toast.show({
           type: 'success',
           text1: 'Account Created!',
-          text2: 'Please check your email to verify your account',
+          text2: hasPhoneNumber 
+            ? 'Please check your email and phone for verification codes'
+            : 'Please check your email to verify your account',
           position: 'top',
         });
         
-        // Navigate to email verification screen
-        navigation.navigate('VerifyEmail', { email: email.toLowerCase().trim() });
+        // Navigate to email verification screen with conditional phone data
+        const verificationData: any = { 
+          email: email.toLowerCase().trim(),
+          userId: response.data?.user?.id, // Add user ID for phone verification
+        };
+        
+        if (hasPhoneNumber) {
+          verificationData.phoneNumber = phoneNumber.trim();
+        }
+        
+        navigation.navigate('VerifyEmail', verificationData);
       }
     } catch (error: any) {
       console.error('Registration error:', error);
@@ -273,6 +312,25 @@ export default function RegisterScreen({ navigation }: any) {
                 />
                 <HelperText type="error" visible={!!emailError}>
                   {emailError}
+                </HelperText>
+
+                {/* Phone Number */}
+                <TextInput
+                  label="Phone Number (Optional)"
+                  value={phoneNumber}
+                  onChangeText={setPhoneNumber}
+                  onBlur={() => validatePhoneNumber(phoneNumber)}
+                  mode="outlined"
+                  keyboardType="phone-pad"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  error={!!phoneNumberError}
+                  style={styles.input}
+                  left={<TextInput.Icon icon="phone" />}
+                  placeholder="+1234567890 (optional)"
+                />
+                <HelperText type="error" visible={!!phoneNumberError}>
+                  {phoneNumberError}
                 </HelperText>
 
                 {/* Password */}

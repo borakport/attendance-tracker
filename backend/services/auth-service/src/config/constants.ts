@@ -1,6 +1,6 @@
 export const constants = {
-  JWT_ACCESS_EXPIRES_IN: '15m',
-  JWT_REFRESH_EXPIRES_IN: '7d',
+  JWT_ACCESS_EXPIRES_IN: '1d',
+  JWT_REFRESH_EXPIRES_IN: '30d',
   JWT_EMAIL_VERIFY_EXPIRES_IN: '1d',
   JWT_PASSWORD_RESET_EXPIRES_IN: '1h',
   
@@ -14,6 +14,7 @@ export const constants = {
   REDIS_TOKEN_PREFIX: 'refresh_token:',
   REDIS_BLACKLIST_PREFIX: 'blacklist:',
   REDIS_EMAIL_VERIFY_PREFIX: 'email_verify:',
+  REDIS_PHONE_VERIFY_PREFIX: 'phone_verify:',
   REDIS_PASSWORD_RESET_PREFIX: 'password_reset:',
   
   MAX_LOGIN_ATTEMPTS: 5,

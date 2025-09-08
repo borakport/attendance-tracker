@@ -6,9 +6,9 @@
   "author": "ORN Borakport <borakport@github.com> (https://github.com/borakport)",
   "license": "MIT",
   "scripts": {
-    "dev": "next dev --port 3000",
+    "dev": "next dev --port ${PORT:-3000}",
     "build": "next build",
-    "start": "next start --port 3000"
+    "start": "next start --port ${PORT:-3000}"
   },
   "dependencies": {
     "lucide-react": "^0.294.0",

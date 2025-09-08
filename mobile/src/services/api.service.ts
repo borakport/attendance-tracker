@@ -445,6 +445,16 @@ class ApiService {
     return response.data;
   }
 
+  async verifyPhone(userId: string, code: string): Promise<ApiResponse> {
+    const response = await this.authApi.post('/auth/verify-phone', { userId, code });
+    return response.data;
+  }
+
+  async resendPhoneVerification(userId: string): Promise<ApiResponse> {
+    const response = await this.authApi.post('/auth/resend-phone-verification', { userId });
+    return response.data;
+  }
+
   async forgotPassword(email: string): Promise<ApiResponse> {
     const response = await this.authApi.post('/auth/forgot-password', { email });
     return response.data;

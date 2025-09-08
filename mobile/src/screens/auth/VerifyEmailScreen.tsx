@@ -4,6 +4,7 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  Linking,
 } from 'react-native';
 import {
   TextInput,
@@ -18,7 +19,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
-import * as Linking from 'expo-linking';
 import apiService from '@/services/api.service';
 
 interface VerifyEmailScreenProps {
@@ -27,17 +27,25 @@ interface VerifyEmailScreenProps {
     params?: {
       token?: string;
       email?: string;
+      phoneNumber?: string;
+      userId?: string;
     };
   };
 }
 
 export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScreenProps) {
-  const [token, setToken] = useState(route?.params?.token || '');
   const [email, setEmail] = useState(route?.params?.email || '');
+  const [phoneNumber, setPhoneNumber] = useState(route?.params?.phoneNumber || '');
+  const [userId, setUserId] = useState(route?.params?.userId || '');
+  const [phoneCode, setPhoneCode] = useState('');
+  const [token, setToken] = useState(route?.params?.token || '');
   const [isLoading, setIsLoading] = useState(false);
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [isPhoneVerified, setIsPhoneVerified] = useState(!route?.params?.phoneNumber);
   const [isVerified, setIsVerified] = useState(false);
-  const [tokenError, setTokenError] = useState('');
   const [emailError, setEmailError] = useState('');
+  const [phoneCodeError, setPhoneCodeError] = useState('');
+  const [tokenError, setTokenError] = useState('');
 
   useEffect(() => {
     // Handle deep link when component mounts
@@ -57,18 +65,20 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
   }, [token]);
 
   const handleDeepLinkEvent = (event: { url: string }) => {
-    const url = Linking.parse(event.url);
-    if (url.queryParams?.token) {
-      setToken(url.queryParams.token as string);
+    const url = new URL(event.url);
+    const tokenParam = url.searchParams.get('token');
+    if (tokenParam) {
+      setToken(tokenParam);
     }
   };
 
   const handleDeepLink = async () => {
     const url = await Linking.getInitialURL();
     if (url) {
-      const parsed = Linking.parse(url);
-      if (parsed.queryParams?.token) {
-        setToken(parsed.queryParams.token as string);
+      const parsed = new URL(url);
+      const tokenParam = parsed.searchParams.get('token');
+      if (tokenParam) {
+        setToken(tokenParam);
       }
     }
   };
@@ -93,6 +103,19 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
       return false;
     }
     setEmailError('');
+    return true;
+  };
+
+  const validatePhoneCode = (code: string) => {
+    if (!code.trim()) {
+      setPhoneCodeError('Verification code is required');
+      return false;
+    }
+    if (!/^\d{6}$/.test(code)) {
+      setPhoneCodeError('Code must be 6 digits');
+      return false;
+    }
+    setPhoneCodeError('');
     return true;
   };
 
@@ -154,7 +177,72 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
     }
   };
 
-  if (isVerified) {
+  const handleVerifyPhone = async () => {
+    if (!validatePhoneCode(phoneCode)) {
+      return;
+    }
+
+    if (!userId) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'User ID not found. Please try registering again.',
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await apiService.verifyPhone(userId, phoneCode);
+      setIsPhoneVerified(true);
+      
+      Toast.show({
+        type: 'success',
+        text1: 'Phone Verified Successfully',
+        text2: 'Your phone number has been verified',
+      });
+    } catch (error: any) {
+      Toast.show({
+        type: 'error',
+        text1: 'Verification Failed',
+        text2: error.response?.data?.message || 'Invalid or expired code',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendPhoneCode = async () => {
+    if (!userId) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'User ID not found. Please try registering again.',
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await apiService.resendPhoneVerification(userId);
+      
+      Toast.show({
+        type: 'success',
+        text1: 'Code Sent',
+        text2: 'A new verification code has been sent to your phone',
+      });
+    } catch (error: any) {
+      Toast.show({
+        type: 'error',
+        text1: 'Failed to resend code',
+        text2: error.response?.data?.message || 'Please try again',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isVerified && isPhoneVerified) {
     return (
       <LinearGradient
         colors={['#667eea', '#764ba2']}
@@ -172,9 +260,14 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
                   />
                 </View>
                 
-                <Title style={styles.title}>Email Verified!</Title>
+                <Title style={styles.title}>
+                  {phoneNumber ? 'Account Verified!' : 'Email Verified!'}
+                </Title>
                 <Text style={styles.message}>
-                  Your email has been successfully verified. You can now sign in to your account.
+                  {phoneNumber 
+                    ? 'Your email and phone number have been successfully verified. You can now sign in to your account.'
+                    : 'Your email has been successfully verified. You can now sign in to your account.'
+                  }
                 </Text>
                 
                 <Button
@@ -214,9 +307,14 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
                   />
                 </View>
                 
-                <Title style={styles.title}>Verify Your Email</Title>
+                <Title style={styles.title}>
+                  {phoneNumber ? 'Verify Your Account' : 'Verify Your Email'}
+                </Title>
                 <Text style={styles.message}>
-                  Enter the verification token from your email or paste the verification link.
+                  {phoneNumber 
+                    ? 'Enter the verification token from your email and SMS code from your phone.'
+                    : 'Enter the verification token from your email or paste the verification link.'
+                  }
                 </Text>
 
                 <TextInput
@@ -295,6 +393,66 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
                     'Resend Verification Email'
                   )}
                 </Button>
+
+                {/* Phone Verification Section - Only show if phone number provided */}
+                {phoneNumber && !isPhoneVerified && (
+                  <>
+                    <Text style={[styles.message, { marginTop: 24, marginBottom: 16 }]}>
+                      Please also verify your phone number by entering the 6-digit code sent to {phoneNumber}
+                    </Text>
+
+                    <TextInput
+                      label="Phone Verification Code"
+                      value={phoneCode}
+                      onChangeText={(text) => {
+                        setPhoneCode(text);
+                        if (phoneCodeError) validatePhoneCode(text);
+                      }}
+                      onBlur={() => validatePhoneCode(phoneCode)}
+                      mode="outlined"
+                      keyboardType="numeric"
+                      maxLength={6}
+                      error={!!phoneCodeError}
+                      style={styles.input}
+                      left={<TextInput.Icon icon="cellphone" />}
+                      placeholder="Enter 6-digit code"
+                    />
+                    <HelperText type="error" visible={!!phoneCodeError}>
+                      {phoneCodeError}
+                    </HelperText>
+
+                    <Button
+                      mode="contained"
+                      onPress={handleVerifyPhone}
+                      disabled={isLoading}
+                      style={styles.button}
+                      contentStyle={styles.buttonContent}
+                    >
+                      {isLoading ? <ActivityIndicator color="white" /> : 'Verify Phone'}
+                    </Button>
+
+                    <Button
+                      mode="outlined"
+                      onPress={handleResendPhoneCode}
+                      disabled={isLoading}
+                      style={styles.resendButton}
+                      contentStyle={styles.buttonContent}
+                    >
+                      {isLoading ? (
+                        <ActivityIndicator color="#667eea" />
+                      ) : (
+                        'Resend Phone Code'
+                      )}
+                    </Button>
+                  </>
+                )}
+
+                {/* Success message when phone is verified */}
+                {phoneNumber && isPhoneVerified && (
+                  <Text style={[styles.message, { marginTop: 16, color: '#4CAF50' }]}>
+                    ✅ Phone number verified successfully!
+                  </Text>
+                )}
 
                 <Button
                   mode="text"

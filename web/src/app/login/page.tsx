@@ -2,31 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, Eye, EyeOff, ChevronDown } from 'lucide-react';
+import Link from 'next/link';
+import { User, Eye, EyeOff } from 'lucide-react';
 import { APP_CONFIG } from '@/constants';
 import { useAuth } from '@/contexts/AuthContext';
-
-// Demo credentials for testing (from seeded database)
-const DEMO_CREDENTIALS = [
-  {
-    name: 'System Administrator',
-    email: 'system.admin@gpsattendance.edu',
-    password: 'Admin@2025!Secure',
-    role: 'admin'
-  },
-  {
-    name: 'Dr. Emily Chen',
-    email: 'emily.chen@university.edu',
-    password: 'SecurePassword123!',
-    role: 'instructor'
-  },
-  {
-    name: 'Alex Johnson',
-    email: 'alex.johnson@student.edu',
-    password: 'SecurePassword123!',
-    role: 'student'
-  }
-];
 
 export default function LoginPage() {
   console.log('🔄 LoginPage component rendering/mounting');
@@ -40,13 +19,23 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [selectedTestUser, setSelectedTestUser] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   
   const router = useRouter();
 
   // Debug: Log component mount
   useEffect(() => {
     console.log('🎯 LoginPage component mounted');
+    
+    // Check for success message from signup
+    const urlParams = new URLSearchParams(window.location.search);
+    const message = urlParams.get('message');
+    if (message) {
+      setSuccessMessage(message);
+      // Clear the URL parameter
+      window.history.replaceState({}, '', '/login');
+    }
+    
     return () => {
       console.log('🗑️ LoginPage component unmounting');
     };
@@ -58,18 +47,6 @@ export default function LoginPage() {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
-  };
-
-  const handleTestUserSelect = (userId: string) => {
-    const user = DEMO_CREDENTIALS.find(u => u.email === userId);
-    if (user) {
-      setFormData(prev => ({
-        ...prev,
-        email: user.email,
-        password: user.password
-      }));
-      setSelectedTestUser(userId);
-    }
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -126,37 +103,23 @@ export default function LoginPage() {
       <div className="max-w-md w-full">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">
-            <User className="h-8 w-8 text-white" />
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
+            <User className="h-8 w-8 text-blue-600" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">{APP_CONFIG.NAME}</h1>
           <p className="text-gray-600">Sign in to your account</p>
         </div>
 
-        {/* Test User Selection (Development Only) */}
-        <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <h3 className="text-sm font-medium text-yellow-800 mb-2">🧪 Test Mode</h3>
-          <p className="text-xs text-yellow-700 mb-3">Quick login with test users from your backend database</p>
-          <div className="relative">
-            <select
-              value={selectedTestUser}
-              onChange={(e) => handleTestUserSelect(e.target.value)}
-              className="w-full px-3 py-2 border border-yellow-300 rounded-md focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-sm bg-white"
-            >
-              <option value="">Select a test user...</option>
-              {DEMO_CREDENTIALS.map((user) => (
-                <option key={user.email} value={user.email}>
-                  {user.name} ({user.role}) - {user.email}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-          </div>
-        </div>
-
         {/* Login Form */}
         <div className="bg-white rounded-lg shadow-lg p-6">
           <form onSubmit={handleLogin} className="space-y-4">
+            {/* Success Message */}
+            {successMessage && (
+              <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md">
+                <p className="text-sm">{successMessage}</p>
+              </div>
+            )}
+            
             {/* Error Message */}
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
@@ -239,8 +202,16 @@ export default function LoginPage() {
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-6 text-sm text-gray-600">
-          <p>© 2025 Smart Attendance System. All rights reserved.</p>
+        <div className="text-center mt-6">
+          <p className="text-sm text-gray-600 mb-2">
+            Don't have an account?{' '}
+            <Link href="/signup" className="text-blue-600 hover:text-blue-800 font-medium">
+              Create one
+            </Link>
+          </p>
+          <p className="text-sm text-gray-600">
+            © 2025 Smart Attendance System. All rights reserved.
+          </p>
         </div>
       </div>
     </div>

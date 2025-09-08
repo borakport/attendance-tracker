@@ -63,6 +63,15 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
 
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<void>;
+  signup: (data: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+    confirmPassword: string;
+    phoneNumber?: string;
+    role?: 'ADMIN' | 'INSTRUCTOR' | 'STUDENT';
+  }) => Promise<void>;
   logout: () => void;
   clearError: () => void;
   refreshUser: () => Promise<void>;
@@ -131,6 +140,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const signup = async (data: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+    confirmPassword: string;
+    phoneNumber?: string;
+    role?: 'ADMIN' | 'INSTRUCTOR' | 'STUDENT';
+  }) => {
+    console.log('🔑 AuthContext signup called');
+    dispatch({ type: 'AUTH_START' });
+    
+    try {
+      console.log('📡 Calling authAPI.signup...');
+      const response = await apiService.signup(data);
+      console.log('✅ authAPI.signup successful');
+      
+      // Don't auto-login after signup, let user sign in manually
+      dispatch({ type: 'AUTH_LOGOUT' });
+    } catch (error) {
+      console.error('❌ AuthContext signup error:', error);
+      const message = error instanceof Error ? error.message : 'Registration failed';
+      dispatch({ type: 'AUTH_ERROR', payload: message });
+      throw error;
+    }
+  };
+
   const logout = async () => {
     try {
       // Call backend to invalidate session
@@ -165,6 +201,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const value: AuthContextType = {
     ...state,
     login,
+    signup,
     logout,
     clearError,
     refreshUser,

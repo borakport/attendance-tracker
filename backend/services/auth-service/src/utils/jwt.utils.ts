@@ -296,6 +296,25 @@ export class JWTUtils {
   }
 
   /**
+   * Generate phone verification token
+   * 
+   * Creates a special-purpose token for phone verification.
+   * This token has a shorter expiration time and contains only the user ID
+   * and token type for security.
+   * 
+   * @param userId - User ID for whom to generate the verification token
+   * @returns string - JWT token for phone verification
+   */
+  static generatePhoneVerificationToken(userId: string): string {
+    const { accessSecret } = this.getSecrets();
+    return jwt.sign(
+      { userId, type: 'phone_verification' },
+      accessSecret,
+      { expiresIn: constants.JWT_EMAIL_VERIFY_EXPIRES_IN as any } // Use same expiration as email
+    );
+  }
+
+  /**
    * Generate password reset token
    * 
    * Creates a special-purpose token for password reset functionality.
@@ -324,6 +343,21 @@ export class JWTUtils {
    * @throws Error if token is invalid or expired
    */
   static verifyEmailVerificationToken(token: string): { userId: string; type: string } {
+    const { accessSecret } = this.getSecrets();
+    return jwt.verify(token, accessSecret) as { userId: string; type: string };
+  }
+
+  /**
+   * Verify phone verification token
+   * 
+   * Validates and decodes a phone verification token.
+   * Ensures the token is valid and hasn't expired.
+   * 
+   * @param token - Phone verification JWT token
+   * @returns Object containing userId and token type
+   * @throws Error if token is invalid or expired
+   */
+  static verifyPhoneVerificationToken(token: string): { userId: string; type: string } {
     const { accessSecret } = this.getSecrets();
     return jwt.verify(token, accessSecret) as { userId: string; type: string };
   }

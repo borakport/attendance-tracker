@@ -233,6 +233,85 @@ export class AuthController {
   }
 
   /**
+   * Email Verification Link Endpoint
+   * GET /api/v1/auth/verify-email?token=xxx
+   * 
+   * Handles email verification link clicks and redirects to web UI.
+   */
+  static async verifyEmailLink(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    try {
+      const { token } = req.query;
+
+      if (!token || typeof token !== 'string') {
+        // Redirect to frontend with error
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        return res.redirect(`${frontendUrl}/auth/verify?error=invalid_token`);
+      }
+
+      // Verify the email using the same service method
+      await AuthService.verifyEmail(token);
+
+      // Redirect to frontend with success
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      res.redirect(`${frontendUrl}/auth/verify?token=${token}&success=true`);
+    } catch (error) {
+      // Redirect to frontend with error
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      res.redirect(`${frontendUrl}/auth/verify?error=verification_failed`);
+    }
+  }
+
+  /**
+   * Phone Verification Endpoint
+   * POST /api/v1/auth/verify-phone
+   * 
+   * Handles phone number verification using verification code.
+   */
+  static async verifyPhone(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      // Extract verification data from request body
+      const { userId, code } = req.body;
+
+      // Delegate phone verification business logic to AuthService
+      const result = await AuthService.verifyPhone(userId, code);
+
+      // Send success response
+      res.status(200).json({
+        success: true,
+        message: result.message,
+      });
+    } catch (error) {
+      // Pass any errors to error handling middleware
+      next(error);
+    }
+  }
+
+  /**
+   * Resend Phone Verification Endpoint
+   * POST /api/v1/auth/resend-phone-verification
+   * 
+   * Handles requests to resend phone verification code.
+   */
+  static async resendPhoneVerification(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      // Extract user ID from request body
+      const { userId } = req.body;
+
+      // Delegate resend logic to AuthService
+      const result = await AuthService.resendPhoneVerification(userId);
+
+      // Send success response
+      res.status(200).json({
+        success: true,
+        message: result.message,
+      });
+    } catch (error) {
+      // Pass any errors to error handling middleware
+      next(error);
+    }
+  }
+
+  /**
    * Forgot Password Endpoint
    * POST /api/v1/auth/forgot-password
    * 

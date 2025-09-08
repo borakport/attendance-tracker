@@ -35,6 +35,8 @@ model User {
   role                   UserRole  @default(STUDENT)
   emailVerified          Boolean   @default(false)
   emailVerificationToken String?   @unique
+  phoneVerified          Boolean   @default(false)
+  phoneVerificationToken String?   @unique
   passwordResetToken     String?   @unique
   passwordResetExpires   DateTime?
   twoFactorEnabled       Boolean   @default(false)

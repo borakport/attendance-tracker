@@ -34,7 +34,7 @@ services:
     image: node:18-alpine
     working_dir: /app
     volumes:
-      - ./sms-simulator:/app
+      - ../sms-simulator:/app
     command: sh -c "npm install && npm start"
     ports:
       - "3010:3010"   # SMS simulator API and Web UI

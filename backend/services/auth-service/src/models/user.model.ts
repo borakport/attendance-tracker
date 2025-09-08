@@ -17,6 +17,7 @@ export interface UpdateUserData {
   lastName?: string;
   phoneNumber?: string;
   emailVerified?: boolean;
+  phoneVerified?: boolean;
   lastLogin?: Date;
   loginAttempts?: number;
   accountLocked?: boolean;
