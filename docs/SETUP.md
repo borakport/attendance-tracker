@@ -247,20 +247,23 @@ SMS_API_URL=http://localhost:3010
 
 ### Default User Credentials
 
-**System Administrators:**
-- Email: `system.admin@gpsattendance.edu`
-- Email: `super.admin@gpsattendance.edu`
-- Password: `Admin@2025!Secure`
+**System Administrator:**
+- Email: `admin@attendance.com`
+- Password: `password123`
 
-**Instructors:**
-- Email Pattern: `[firstName].[lastName]@university.edu`
-- Password: `Instructor@2025!Secure`
-- Example: `john.doe@university.edu`
+**Instructors (sample accounts):**
+- Email: `prof.anderson@university.edu`
+- Email: `dr.martinez@college.edu`
+- Email: `prof.johnson@academy.edu`
+- Email: `dr.wilson@institute.edu`
+- Password: `password123` (for all instructor accounts)
 
-**Students:**
-- Email Pattern: `[firstName].[lastName][number]@student.edu`  
-- Password: `Student@2025!Secure`
-- Example: `jane.smith1@student.edu`
+**Students (sample accounts):**
+- Email: `alice.smith@student.edu`
+- Email: `bob.johnson@student.edu`
+- Email: `charlie.brown@student.edu`
+- Email: `diana.prince@student.edu`
+- Password: `password123` (for all student accounts)
 
 ### Database Schema
 

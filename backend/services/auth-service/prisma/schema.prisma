@@ -7,52 +7,31 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum UserRole {
-  ADMIN
-  INSTRUCTOR
-  STUDENT
-}
-
-enum CourseRole {
-  OWNER
-  PARTICIPANT
-}
-
-enum AttendanceStatus {
-  PRESENT
-  LATE
-  ABSENT
-}
-
 model User {
-  id                     String    @id @default(uuid())
-  email                  String    @unique
+  id                     String         @id @default(uuid())
+  email                  String         @unique
   password               String
   firstName              String
   lastName               String
   phoneNumber            String?
   profilePicture         String?
-  role                   UserRole  @default(STUDENT)
-  emailVerified          Boolean   @default(false)
-  emailVerificationToken String?   @unique
-  phoneVerified          Boolean   @default(false)
-  phoneVerificationToken String?   @unique
-  passwordResetToken     String?   @unique
+  role                   UserRole       @default(STUDENT)
+  emailVerified          Boolean        @default(false)
+  emailVerificationToken String?        @unique
+  passwordResetToken     String?        @unique
   passwordResetExpires   DateTime?
-  twoFactorEnabled       Boolean   @default(false)
+  twoFactorEnabled       Boolean        @default(false)
   twoFactorSecret        String?
   lastLogin              DateTime?
-  accountLocked          Boolean   @default(false)
-  loginAttempts          Int       @default(0)
-  createdAt              DateTime  @default(now())
-  updatedAt              DateTime  @updatedAt
-
-  // Relations
-  refreshTokens    RefreshToken[]
-  ownedCourses     Course[]       @relation("CourseOwner")
-  courseMembers    CourseMember[]
-  attendances      Attendance[]
-  createdSessions  Session[]
+  accountLocked          Boolean        @default(false)
+  loginAttempts          Int            @default(0)
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+  attendances            Attendance[]
+  courseMembers          CourseMember[]
+  ownedCourses           Course[]       @relation("CourseOwner")
+  refreshTokens          RefreshToken[]
+  createdSessions        Session[]
 
   @@index([email])
   @@index([emailVerificationToken])
@@ -64,40 +43,29 @@ model RefreshToken {
   id        String   @id @default(uuid())
   token     String   @unique
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
   createdAt DateTime @default(now())
-  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([token])
   @@index([userId])
   @@map("refresh_tokens")
 }
 
 model Course {
-  id          String   @id @default(uuid())
+  id          String         @id @default(uuid())
   name        String
   description String?
-  code        String   @unique
+  code        String         @unique
   ownerId     String
-  owner       User     @relation("CourseOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  settings    Json     @default("{}")
-  // Settings JSON structure:
-  // {
-  //   "gpsRadius": 50,
-  //   "allowLateEntry": true,
-  //   "lateEntryMinutes": 15,
-  //   "requireSelfie": false,
-  //   "autoEndSession": true,
-  //   "autoEndMinutes": 120
-  // }
-  isActive    Boolean  @default(true)
+  settings    Json           @default("{}")
+  isActive    Boolean        @default(true)
   startDate   DateTime?
   endDate     DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
   members     CourseMember[]
+  owner       User           @relation("CourseOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   sessions    Session[]
 
   @@index([code])
@@ -109,12 +77,12 @@ model Course {
 model CourseMember {
   id        String     @id @default(uuid())
   courseId  String
-  course    Course     @relation(fields: [courseId], references: [id], onDelete: Cascade)
   userId    String
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   role      CourseRole @default(PARTICIPANT)
   joinedAt  DateTime   @default(now())
   updatedAt DateTime   @updatedAt
+  course    Course     @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([courseId, userId])
   @@index([courseId])
@@ -123,32 +91,30 @@ model CourseMember {
 }
 
 model Session {
-  id              String      @id @default(uuid())
-  courseId        String
-  course          Course      @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  createdById     String
-  createdBy       User        @relation(fields: [createdById], references: [id])
-  name            String
-  description     String?
-  startTime       DateTime
-  endTime         DateTime
-  latitude        Decimal     @db.Decimal(10, 8)
-  longitude       Decimal     @db.Decimal(11, 8)
-  radiusMeters    Int         @default(50)
-  locationName    String?
-  isActive        Boolean     @default(false)
-  allowLateEntry  Boolean     @default(true)
-  lateMinutes     Int         @default(15)
-  requireSelfie   Boolean     @default(false)
-  qrCode          String?     @unique
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  startedAt       DateTime?
-  endedAt         DateTime?
-  notes           String?
-
-  // Relations
-  attendances     Attendance[]
+  id             String       @id @default(uuid())
+  courseId       String
+  createdById    String
+  name           String
+  description    String?
+  startTime      DateTime
+  endTime        DateTime
+  latitude       Decimal      @db.Decimal(10, 8)
+  longitude      Decimal      @db.Decimal(11, 8)
+  radiusMeters   Int          @default(50)
+  locationName   String?
+  isActive       Boolean      @default(true)
+  allowLateEntry Boolean      @default(true)
+  lateMinutes    Int          @default(15)
+  requireSelfie  Boolean      @default(false)
+  qrCode         String?      @unique
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  startedAt      DateTime?
+  endedAt        DateTime?
+  notes          String?
+  attendances    Attendance[]
+  course         Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  createdBy      User         @relation(fields: [createdById], references: [id])
 
   @@index([courseId])
   @@index([createdById])
@@ -159,30 +125,23 @@ model Session {
 }
 
 model Attendance {
-  id                 String           @id @default(uuid())
-  sessionId          String
-  session            Session          @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  userId             String
-  user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  markedAt           DateTime         @default(now())
-  latitude           Decimal          @db.Decimal(10, 8)
-  longitude          Decimal          @db.Decimal(11, 8)
-  status             AttendanceStatus @default(PRESENT)
+  id                  String           @id @default(uuid())
+  sessionId           String
+  userId              String
+  markedAt            DateTime         @default(now())
+  latitude            Decimal          @db.Decimal(10, 8)
+  longitude           Decimal          @db.Decimal(11, 8)
+  status              AttendanceStatus @default(PRESENT)
   distanceFromSession Float
-  selfieUrl          String?
-  deviceInfo         Json?
-  // Device info structure:
-  // {
-  //   "platform": "ios/android",
-  //   "model": "iPhone 14",
-  //   "osVersion": "16.0",
-  //   "appVersion": "1.0.0"
-  // }
-  ipAddress          String?
-  notes              String?
-  verifiedBy         String?          // For manual verification
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
+  selfieUrl           String?
+  deviceInfo          Json?
+  ipAddress           String?
+  notes               String?
+  verifiedBy          String?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  session             Session          @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user                User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([sessionId, userId])
   @@index([sessionId])
@@ -208,4 +167,22 @@ model SystemLog {
   @@index([entity])
   @@index([createdAt])
   @@map("system_logs")
+}
+
+enum UserRole {
+  ADMIN
+  INSTRUCTOR
+  STUDENT
+}
+
+enum CourseRole {
+  OWNER
+  PARTICIPANT
+  MODERATOR
+}
+
+enum AttendanceStatus {
+  PRESENT
+  LATE
+  ABSENT
 }

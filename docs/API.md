@@ -368,8 +368,8 @@ All endpoints have rate limiting applied:
 curl -X POST http://localhost:3001/auth/login \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "system.admin@gpsattendance.edu",
-    "password": "Admin@2025!Secure"
+    "email": "admin@attendance.com",
+    "password": "password123"
   }'
 ```
 
@@ -378,8 +378,8 @@ curl -X POST http://localhost:3001/auth/login \
 curl -X POST http://localhost:3001/auth/login \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "john.doe@university.edu", 
-    "password": "Instructor@2025!Secure"
+    "email": "prof.anderson@university.edu", 
+    "password": "password123"
   }'
 ```
 
@@ -388,8 +388,8 @@ curl -X POST http://localhost:3001/auth/login \
 curl -X POST http://localhost:3001/auth/login \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "jane.smith1@student.edu",
-    "password": "Student@2025!Secure"
+    "email": "alice.smith@student.edu",
+    "password": "password123"
   }'
 ```
 

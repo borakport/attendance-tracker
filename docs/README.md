@@ -114,25 +114,30 @@ A comprehensive GPS-based attendance tracking system with real-time location ver
 
 ## 🔐 Default Credentials
 
-**Admin Users:**
-- Email: `system.admin@gpsattendance.edu`
-- Email: `super.admin@gpsattendance.edu`  
-- Password: `Admin@2025!Secure`
+**Admin User:**
+- Email: `admin@attendance.com`
+- Password: `password123`
 
-**Instructors:**
-- Email Pattern: `[firstName].[lastName]@university.edu`
-- Password: `Instructor@2025!Secure`
+**Instructors (Sample Accounts):**
+- Email: `prof.anderson@university.edu`
+- Email: `dr.martinez@college.edu`
+- Email: `prof.johnson@academy.edu`
+- Email: `dr.wilson@institute.edu`
+- Password: `password123` (for all instructor accounts)
 
-**Students:**
-- Email Pattern: `[firstName].[lastName][number]@student.edu`
-- Password: `Student@2025!Secure`
+**Students (Sample Accounts):**
+- Email: `alice.smith@student.edu`
+- Email: `bob.johnson@student.edu`
+- Email: `charlie.brown@student.edu`
+- Email: `diana.prince@student.edu`
+- Password: `password123` (for all student accounts)
 
 ## 📊 Database Statistics
 
 After seeding, the database contains:
-- **527 users** (2 admins, 25 instructors, 500 students)
-- **80 courses** with realistic academic content
-- **2,406 class sessions** with GPS coordinates
+- **49 users** (1 admin, 8 instructors, 40 students)
+- **24 courses** with realistic academic content
+- **Multiple class sessions** with GPS coordinates
 - **60,542 attendance records** 
 - **2,453 course memberships**
 

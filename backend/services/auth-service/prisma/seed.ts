@@ -38,7 +38,7 @@ async function main() {
   console.log('🧹 Cleaned existing data');
 
   // Create admin user
-  const adminPassword = await bcrypt.hash('Admin@123', 10);
+  const adminPassword = await bcrypt.hash('password123', 10);
   const admin = await prisma.user.create({
     data: {
       email: 'admin@attendance.com',
@@ -52,59 +52,105 @@ async function main() {
   });
   console.log('👤 Created admin user:', admin.email);
 
-  // Create test instructor
-  const instructorPassword = await bcrypt.hash('Instructor@123', 10);
-  const instructor = await prisma.user.create({
-    data: {
-      email: 'instructor@attendance.com',
-      password: instructorPassword,
-      firstName: 'John',
-      lastName: 'Instructor',
-      role: UserRole.INSTRUCTOR,
-      emailVerified: true,
-      phoneNumber: '+1234567891',
-    },
-  });
-  console.log('👤 Created instructor:', instructor.email);
-
-  // Create test students
-  const studentPassword = await bcrypt.hash('Student@123', 10);
-  const students = await Promise.all([
+  // Create test instructors
+  const instructorPassword = await bcrypt.hash('password123', 10);
+  const instructors = await Promise.all([
     prisma.user.create({
       data: {
-        email: 'student1@attendance.com',
-        password: studentPassword,
-        firstName: 'Alice',
-        lastName: 'Student',
-        role: UserRole.STUDENT,
+        email: 'prof.anderson@university.edu',
+        password: instructorPassword,
+        firstName: 'Prof.',
+        lastName: 'Anderson',
+        role: UserRole.INSTRUCTOR,
         emailVerified: true,
-        phoneNumber: '+1234567892',
+        phoneNumber: '+1234567801',
       },
     }),
     prisma.user.create({
       data: {
-        email: 'student2@attendance.com',
-        password: studentPassword,
-        firstName: 'Bob',
-        lastName: 'Student',
-        role: UserRole.STUDENT,
+        email: 'dr.martinez@college.edu',
+        password: instructorPassword,
+        firstName: 'Dr.',
+        lastName: 'Martinez',
+        role: UserRole.INSTRUCTOR,
         emailVerified: true,
-        phoneNumber: '+1234567893',
+        phoneNumber: '+1234567802',
       },
     }),
     prisma.user.create({
       data: {
-        email: 'student3@attendance.com',
-        password: studentPassword,
-        firstName: 'Charlie',
-        lastName: 'Student',
-        role: UserRole.STUDENT,
+        email: 'prof.johnson@academy.edu',
+        password: instructorPassword,
+        firstName: 'Prof.',
+        lastName: 'Johnson',
+        role: UserRole.INSTRUCTOR,
         emailVerified: true,
-        phoneNumber: '+1234567894',
+        phoneNumber: '+1234567803',
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: 'dr.wilson@institute.edu',
+        password: instructorPassword,
+        firstName: 'Dr.',
+        lastName: 'Wilson',
+        role: UserRole.INSTRUCTOR,
+        emailVerified: true,
+        phoneNumber: '+1234567804',
       },
     }),
   ]);
-  console.log(`👥 Created ${students.length} students`);
+  console.log(`👨‍🏫 Created ${instructors.length} instructors`);
+
+  // Create test students
+  const studentPassword = await bcrypt.hash('password123', 10);
+  const students = await Promise.all([
+    prisma.user.create({
+      data: {
+        email: 'alice.smith@student.edu',
+        password: studentPassword,
+        firstName: 'Alice',
+        lastName: 'Smith',
+        role: UserRole.STUDENT,
+        emailVerified: true,
+        phoneNumber: '+1234567811',
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: 'bob.johnson@student.edu',
+        password: studentPassword,
+        firstName: 'Bob',
+        lastName: 'Johnson',
+        role: UserRole.STUDENT,
+        emailVerified: true,
+        phoneNumber: '+1234567812',
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: 'charlie.brown@student.edu',
+        password: studentPassword,
+        firstName: 'Charlie',
+        lastName: 'Brown',
+        role: UserRole.STUDENT,
+        emailVerified: true,
+        phoneNumber: '+1234567813',
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: 'diana.prince@student.edu',
+        password: studentPassword,
+        firstName: 'Diana',
+        lastName: 'Prince',
+        role: UserRole.STUDENT,
+        emailVerified: true,
+        phoneNumber: '+1234567814',
+      },
+    }),
+  ]);
+  console.log(`🎓 Created ${students.length} students`);
 
   // Create test courses
   const course1 = await prisma.course.create({
@@ -112,7 +158,7 @@ async function main() {
       name: 'Computer Science 101',
       description: 'Introduction to Computer Science',
       code: await generateUniqueCourseCode(),
-      ownerId: instructor.id,
+      ownerId: instructors[0].id,
       settings: {
         gpsRadius: 50,
         allowLateEntry: true,
@@ -132,7 +178,7 @@ async function main() {
       name: 'Web Development',
       description: 'Full-stack web development with modern technologies',
       code: await generateUniqueCourseCode(),
-      ownerId: instructor.id,
+      ownerId: instructors[0].id,
       settings: {
         gpsRadius: 75,
         allowLateEntry: true,
@@ -152,12 +198,12 @@ async function main() {
     data: [
       {
         courseId: course1.id,
-        userId: instructor.id,
+        userId: instructors[0].id,
         role: CourseRole.OWNER,
       },
       {
         courseId: course2.id,
-        userId: instructor.id,
+        userId: instructors[0].id,
         role: CourseRole.OWNER,
       },
     ],
@@ -189,7 +235,7 @@ async function main() {
   const session1 = await prisma.session.create({
     data: {
       courseId: course1.id,
-      createdById: instructor.id,
+      createdById: instructors[0].id,
       name: 'Lecture 1: Introduction',
       description: 'Introduction to programming concepts',
       startTime: new Date(now.getTime() + 60 * 60 * 1000), // 1 hour from now
@@ -209,7 +255,7 @@ async function main() {
   const session2 = await prisma.session.create({
     data: {
       courseId: course2.id,
-      createdById: instructor.id,
+      createdById: instructors[0].id,
       name: 'Lab Session: HTML/CSS',
       description: 'Hands-on HTML and CSS practice',
       startTime: tomorrow,
@@ -230,7 +276,7 @@ async function main() {
   const pastSession = await prisma.session.create({
     data: {
       courseId: course1.id,
-      createdById: instructor.id,
+      createdById: instructors[0].id,
       name: 'Previous Lecture',
       description: 'Already completed session',
       startTime: new Date(now.getTime() - 48 * 60 * 60 * 1000), // 2 days ago

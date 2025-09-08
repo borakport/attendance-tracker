@@ -133,6 +133,40 @@ async function main() {
         phoneNumber: '+1234567805',
       },
     }),
+    // Additional instructors for larger dataset
+    prisma.user.create({
+      data: {
+        email: 'dr.smith@university.edu',
+        password: instructorPassword,
+        firstName: 'Dr.',
+        lastName: 'Smith',
+        role: UserRole.INSTRUCTOR,
+        emailVerified: true,
+        phoneNumber: '+1234567806',
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: 'prof.taylor@academy.edu',
+        password: instructorPassword,
+        firstName: 'Prof.',
+        lastName: 'Taylor',
+        role: UserRole.INSTRUCTOR,
+        emailVerified: true,
+        phoneNumber: '+1234567807',
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: 'dr.brown@institute.edu',
+        password: instructorPassword,
+        firstName: 'Dr.',
+        lastName: 'Brown',
+        role: UserRole.INSTRUCTOR,
+        emailVerified: true,
+        phoneNumber: '+1234567808',
+      },
+    }),
   ]);
   console.log(`👨‍🏫 Created ${instructors.length} instructors`);
 
@@ -358,6 +392,227 @@ async function main() {
         role: UserRole.STUDENT,
         emailVerified: true,
         phoneNumber: '+1234567830',
+      },
+    }),
+    // Additional students for larger dataset
+    prisma.user.create({
+      data: {
+        email: 'sarah.connor@student.edu',
+        password: studentPassword,
+        firstName: 'Sarah',
+        lastName: 'Connor',
+        role: UserRole.STUDENT,
+        emailVerified: true,
+        phoneNumber: '+1234567831',
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: 'bruce.wayne@student.edu',
+        password: studentPassword,
+        firstName: 'Bruce',
+        lastName: 'Wayne',
+        role: UserRole.STUDENT,
+        emailVerified: true,
+        phoneNumber: '+1234567832',
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: 'clark.kent@student.edu',
+        password: studentPassword,
+        firstName: 'Clark',
+        lastName: 'Kent',
+        role: UserRole.STUDENT,
+        emailVerified: true,
+        phoneNumber: '+1234567833',
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: 'natasha.romanoff@student.edu',
+        password: studentPassword,
+        firstName: 'Natasha',
+        lastName: 'Romanoff',
+        role: UserRole.STUDENT,
+        emailVerified: true,
+        phoneNumber: '+1234567834',
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: 'wanda.maximoff@student.edu',
+        password: studentPassword,
+        firstName: 'Wanda',
+        lastName: 'Maximoff',
+        role: UserRole.STUDENT,
+        emailVerified: true,
+        phoneNumber: '+1234567835',
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: 'thor.odinson@student.edu',
+        password: studentPassword,
+        firstName: 'Thor',
+        lastName: 'Odinson',
+        role: UserRole.STUDENT,
+        emailVerified: true,
+        phoneNumber: '+1234567836',
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: 'scott.lang@student.edu',
+        password: studentPassword,
+        firstName: 'Scott',
+        lastName: 'Lang',
+        role: UserRole.STUDENT,
+        emailVerified: true,
+        phoneNumber: '+1234567837',
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: 'carol.danvers@student.edu',
+        password: studentPassword,
+        firstName: 'Carol',
+        lastName: 'Danvers',
+        role: UserRole.STUDENT,
+        emailVerified: true,
+        phoneNumber: '+1234567838',
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: 'stephen.strange@student.edu',
+        password: studentPassword,
+        firstName: 'Stephen',
+        lastName: 'Strange',
+        role: UserRole.STUDENT,
+        emailVerified: true,
+        phoneNumber: '+1234567839',
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: 'vision.android@student.edu',
+        password: studentPassword,
+        firstName: 'Vision',
+        lastName: 'Android',
+        role: UserRole.STUDENT,
+        emailVerified: true,
+        phoneNumber: '+1234567840',
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: 'sam.wilson@student.edu',
+        password: studentPassword,
+        firstName: 'Sam',
+        lastName: 'Wilson',
+        role: UserRole.STUDENT,
+        emailVerified: true,
+        phoneNumber: '+1234567841',
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: 'bucky.barnes@student.edu',
+        password: studentPassword,
+        firstName: 'Bucky',
+        lastName: 'Barnes',
+        role: UserRole.STUDENT,
+        emailVerified: true,
+        phoneNumber: '+1234567842',
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: 'wade.wilson@student.edu',
+        password: studentPassword,
+        firstName: 'Wade',
+        lastName: 'Wilson',
+        role: UserRole.STUDENT,
+        emailVerified: true,
+        phoneNumber: '+1234567843',
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: 'logan.howlett@student.edu',
+        password: studentPassword,
+        firstName: 'Logan',
+        lastName: 'Howlett',
+        role: UserRole.STUDENT,
+        emailVerified: true,
+        phoneNumber: '+1234567844',
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: 'jean.grey@student.edu',
+        password: studentPassword,
+        firstName: 'Jean',
+        lastName: 'Grey',
+        role: UserRole.STUDENT,
+        emailVerified: true,
+        phoneNumber: '+1234567845',
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: 'ororo.munroe@student.edu',
+        password: studentPassword,
+        firstName: 'Ororo',
+        lastName: 'Munroe',
+        role: UserRole.STUDENT,
+        emailVerified: true,
+        phoneNumber: '+1234567846',
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: 'kurt.wagner@student.edu',
+        password: studentPassword,
+        firstName: 'Kurt',
+        lastName: 'Wagner',
+        role: UserRole.STUDENT,
+        emailVerified: true,
+        phoneNumber: '+1234567847',
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: 'remy.lebeau@student.edu',
+        password: studentPassword,
+        firstName: 'Remy',
+        lastName: 'Lebeau',
+        role: UserRole.STUDENT,
+        emailVerified: true,
+        phoneNumber: '+1234567848',
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: 'kitty.pryde@student.edu',
+        password: studentPassword,
+        firstName: 'Kitty',
+        lastName: 'Pryde',
+        role: UserRole.STUDENT,
+        emailVerified: true,
+        phoneNumber: '+1234567849',
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: 'bobby.drake@student.edu',
+        password: studentPassword,
+        firstName: 'Bobby',
+        lastName: 'Drake',
+        role: UserRole.STUDENT,
+        emailVerified: true,
+        phoneNumber: '+1234567850',
       },
     }),
   ]);

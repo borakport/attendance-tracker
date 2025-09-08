@@ -4,25 +4,28 @@ Essential commands and information for the GPS Attendance Tracking System.
 
 ## Default Credentials
 
-### Admin Users
+### Admin User
 ```
-Email: system.admin@gpsattendance.edu
-Email: super.admin@gpsattendance.edu
-Password: Admin@2025!Secure
-```
-
-### Instructors
-```
-Email Pattern: [firstName].[lastName]@university.edu
-Password: Instructor@2025!Secure
-Example: john.doe@university.edu
+Email: admin@attendance.com
+Password: password123
 ```
 
-### Students
+### Instructors (Sample Accounts)
 ```
-Email Pattern: [firstName].[lastName][number]@student.edu
-Password: Student@2025!Secure
-Example: jane.smith1@student.edu
+Email: prof.anderson@university.edu
+Email: dr.martinez@college.edu
+Email: prof.johnson@academy.edu
+Email: dr.wilson@institute.edu
+Password: password123 (for all instructor accounts)
+```
+
+### Students (Sample Accounts)
+```
+Email: alice.smith@student.edu
+Email: bob.johnson@student.edu
+Email: charlie.brown@student.edu
+Email: diana.prince@student.edu
+Password: password123 (for all student accounts)
 ```
 
 ## Hard Link Setup Commands
@@ -200,8 +203,8 @@ docker logs backend-auth-service-1
 curl -X POST http://localhost:3001/auth/login \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "system.admin@gpsattendance.edu",
-    "password": "Admin@2025!Secure"
+    "email": "admin@attendance.com",
+    "password": "password123"
   }'
 ```
 
@@ -237,7 +240,7 @@ SELECT 'attendances', COUNT(*) FROM attendances;
 ```sql
 SELECT id, email, "firstName", "lastName", role, "emailVerified", "createdAt"
 FROM users 
-WHERE email = 'system.admin@gpsattendance.edu';
+WHERE email = 'admin@attendance.com';
 ```
 
 ### Get Course with Most Sessions
